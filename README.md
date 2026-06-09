@@ -1,410 +1,291 @@
 # Claude Code 生产级 Vibe Coding 配置
 
-> 一套面向 B 端交付的 AI Native 软件开发工作流配置，将 Claude Code 从"代码补全工具"升级为"全栈工程协作者"。
+> 一套让 Claude Code 从"代码补全工具"变成"全栈工程搭档"的配置。适合需要稳定交付的 B 端项目。
 
 ---
 
-## 前置：安装 Claude Code
+## 一句话说明
 
-如果你还没有安装 Claude Code，请先完成安装：
-
-### macOS / Linux
-
-```bash
-# 通过 npm 安装（推荐）
-npm install -g @anthropic-ai/claude-code
-
-# 或使用 npx（无需全局安装）
-npx @anthropic-ai/claude-code
-```
-
-### Windows
-
-```powershell
-# 通过 npm 安装（推荐）
-npm install -g @anthropic-ai/claude-code
-
-# 或使用 npx
-npx @anthropic-ai/claude-code
-```
-
-### 验证安装
-
-```bash
-claude --version
-# 预期输出类似：claude 0.x.x
-```
-
-首次运行会提示登录 Anthropic 账号，按提示完成即可。
-
-更多安装方式见官方文档：[claude.ai/code](https://claude.ai/code)
+装了这个配置后，你对 Claude Code 说"帮我做个后台管理系统"，它会自动走完一整套工程流程——先问清楚你要什么，再出设计方案，再写代码，再测试，再检查，最后发布。而不是一上来就直接写代码，写完才发现理解错了。
 
 ---
 
-## 一键部署（推荐）
+## 先装 Claude Code
 
-### 方式一：让 Claude Code 自己安装（最简单）
-
-**把下面这段指令丢给 Claude Code，它会自动完成全套部署：**
-
-```text
-帮我安装 vibe coding 工作流配置。从 https://github.com/YOUR_USERNAME/claude-vibe-coding-setup 克隆仓库到临时目录，然后运行安装脚本，把 CLAUDE.md 和 skills 部署到 ~/.claude/。安装完成后告诉我有多少个 skill 可用。
-```
-
-> 替换 `YOUR_USERNAME` 为你的 GitHub 用户名。
-
-### 方式二：手动运行安装脚本
+如果你还没装：
 
 ```bash
-# 1. 克隆仓库
-git clone https://github.com/YOUR_USERNAME/claude-vibe-coding-setup.git
+npm install -g @anthropic-ai/claude-code
+```
+
+装完运行 `claude` 按提示登录即可。
+
+---
+
+## 一键安装本配置
+
+### 最简单的方式：让 Claude 自己装
+
+把下面这段话直接发给 Claude Code：
+
+```
+帮我安装 vibe coding 工作流配置。从 https://github.com/digibeing1001/claude-vibe-coding-setup 克隆仓库到临时目录，运行安装脚本，把配置部署到 ~/.claude/。装完告诉我有多少个技能可用。
+```
+
+### 手动安装
+
+```bash
+git clone https://github.com/digibeing1001/claude-vibe-coding-setup.git
 cd claude-vibe-coding-setup
-
-# 2. 运行安装脚本
-# macOS / Linux:
-./scripts/install.sh
-
-# Windows (PowerShell):
-.\scripts\install.ps1
+./scripts/install.sh  # macOS/Linux
+# 或 .\scripts\install.ps1  # Windows
 ```
 
-安装脚本会自动：
-1. 备份现有 `~/.claude/CLAUDE.md` 和 skill 列表
-2. 复制新的灵魂文档
-3. 复制 146 个 skill 到 `~/.claude/skills/`
-4. 可选：在项目根目录安装 `hooks.json`
-
-### 方式三：手动复制
-
-```bash
-# 灵魂文档
-cp CLAUDE.md ~/.claude/CLAUDE.md
-
-# Skills（全部复制）
-cp -r skills/* ~/.claude/skills/
-
-# 项目级 Hooks（进入你的项目目录后）
-mkdir -p .claude
-cp hooks.json .claude/hooks.json
-```
-
-### 验证部署
-
-```bash
-# 检查 skill 数量
-ls ~/.claude/skills/ | wc -l
-# 预期：146+
-
-# 检查灵魂文档
-head -5 ~/.claude/CLAUDE.md
-```
-
-部署完成后，**重启 Claude Code 或开启新会话**即可生效。
+装完重启 Claude Code 即可生效。
 
 ---
 
-## 增强配置（可选）
+## 这套配置能帮你做什么
 
-### Caveman 文言文模式
+### 1. 想清楚了再动手
 
-本配置已内置 `caveman` skill，默认启用**文言文（wenyan）沟通模式**：
+**问题：** 你说"做个登录页面"，AI 直接开写，写完发现理解错了——原来你要的是手机号+验证码，它做成了用户名+密码。
 
-- 精简、去除填充词
-- 使用文言文句式（之、者、也、矣、乎）
-- 保留精确的技术术语
-- 代码块和错误信息保持原样
+**解决：** 配置内置了"深度对齐"能力。你说需求后，AI 会像面试官一样追问你：用户是谁？什么场景用？有没有特殊要求？直到双方理解完全一致才动手。
 
-**关闭方式：** 对 Claude Code 说 `"normal mode"` 或 `"关闭文言文"`
+**用到的地方：**
+- **追问模式** —— 针对复杂需求，逐层剥开细节
+- **共享语言** —— 建立项目的"术语表"，比如你们团队把"用户下单"叫"成单"，AI 后续都会用"成单"这个词，不会混用
 
-**重新启用：** 对 Claude Code 说 `"caveman mode"` 或 `"文言文"`
+### 2. 设计不是随便画画
 
-### Claude Mem（跨会话记忆）
+**问题：** AI 生成的界面千篇一律——紫色渐变、圆角卡片、Inter 字体，一看就是 AI 做的。
 
-Claude Mem 让 AI 记住过往会话中的决策、模式和经验，实现真正的长期协作：
+**解决：** 配置内置了设计规范，要求每个界面必须有明确的设计意图：
+- 选什么字体、颜色、布局，必须能说清楚为什么
+- 动效只能用特定的性能安全方式，不能卡顿
+- 必须考虑无障碍（键盘能用、屏幕阅读器能读、对比度够）
 
-**安装方式：**
+**输出标准：** 设计评分低于 7.5 分（满分 10 分）不能进入开发阶段。
 
+### 3. 改代码前先看影响范围
+
+**问题：** 你让 AI 改一个函数，它改了，但不知道这个函数被 20 个地方调用，改完一堆地方报错。
+
+**解决：** 如果装了 CodeGraph（可选），AI 改代码前会自动查：这个函数被谁调用了？改了会影响哪些地方？然后给你一份影响报告，你确认后再动手。
+
+### 4. 代码质量自动把关
+
+**问题：** AI 写的代码能跑，但命名混乱、有死代码、没处理错误情况。
+
+**解决：** 配置内置了多层自动检查：
+
+| 检查项 | 什么意思 | 什么时候做 |
+|--------|---------|-----------|
+| **类型检查** | 确保变量类型没错 | 每次保存 |
+| **格式检查** | 代码排版统一 | 每次保存 |
+| **烟雾测试** | 每个功能至少 3 个测试用例 | 每做完一个模块 |
+| **复杂度检查** | 单个函数不超过 15 层逻辑 | 持续 |
+| **死代码检查** | 删掉用不到的代码 | 持续 |
+| **安全检查** | 没有硬编码密码、SQL 注入风险等 | 发布前 |
+| **无障碍检查** | 界面对残障人士友好 | 发布前 |
+
+**关键规则：** 3 个以上测试失败 = 这个模块需要重新设计，而不是修修补补。
+
+### 5. 多人视角审查
+
+**问题：** AI 自己检查自己的代码，容易漏掉问题。
+
+**解决：** 配置要求从多个"角色"视角审查代码：
+- **CEO 视角** —— 这功能符合业务目标吗？有没有做多余的东西？
+- **架构师视角** —— 代码结构合理吗？会不会留下技术债？
+- **开发者体验视角** —— 新人接手这个项目容易上手吗？
+- **测试视角** —— 边缘情况考虑了吗？异常处理了吗？
+
+### 6. 发布有监控
+
+**问题：** 代码上线了，出问题不知道。
+
+**解决：** 发布后自动监控 5 分钟核心指标，有异常立即报告。
+
+---
+
+## 完整工作流程（8 个阶段）
+
+```
+你说"做个功能"
+    ↓
+【感知】AI 读项目文档，理解现状
+    ↓
+【对齐】AI 追问你需求，建立统一术语
+    ↓
+【规划】AI 拆解任务，出执行计划
+    ↓
+【设计】UI 项目出设计稿，评分 ≥ 7.5
+    ↓
+【开发】写代码 + 测试，每 3 个模块检查一次
+    ↓
+【验证】跑测试 + 浏览器验证 + 格式检查
+    ↓
+【审查】多角色视角代码审查
+    ↓
+【发布】PR → CI → 部署 → 监控
+    ↓
+【反思】总结经验，写入记忆
+```
+
+**小任务（15 分钟内）走捷径**，直接快速完成，不走完整流程。
+
+---
+
+## 146 项技能分类
+
+不用记名字，知道有什么能力就行：
+
+**需求与规划（10+ 项）**
+- 深度追问需求、建立项目术语表、拆解任务计划、生成产品需求文档
+
+**设计（8 项）**
+- UI 视觉设计、动效设计、设计系统、原型制作、界面打磨
+
+**编码与质量（5 项）**
+- 编码规范、TDD 测试驱动、错误处理模式
+
+**测试（4 项）**
+- 端到端测试、浏览器自动化测试、回归测试、测试执行
+
+**调试与诊断（4 项）**
+- 系统调试、专业调试工具、跳出细节看全局
+
+**审查（5 项）**
+- 代码审查、UI 审查、质量审计
+
+**发布与运维（3 项）**
+- 部署模式、发布监控、生产环境审计
+
+**安全（3 项）**
+- 安全审计、漏洞扫描
+
+**AI 工程（5 项）**
+- AI 优先工程方法、持续自动循环、Agent 评估
+
+**项目管理（83 项 GSD）**
+- 项目初始化、阶段规划、执行、调试、代码审查、发布等完整管理流程
+
+**Git 安全（2 项）**
+- 防止危险 Git 操作、自动配置提交前检查
+
+**自动化钩子（13 个）**
+- 监控上下文使用、阶段边界检查、提示词安全、注入扫描、提交验证等
+
+---
+
+## 可选增强（按需安装）
+
+### 120+ 专业插件（awesome-claude-code-toolkit）
+
+安装后 AI 会在对应阶段自动调用：
+- **画架构图** —— 复杂系统出架构图和接口设计
+- **数据库设计** —— 自动生成表结构和关系图
+- **前端开发增强** —— 组件开发最佳实践
+- **代码审查增强** —— 分级审查（致命/严重/警告/建议）
+- **死代码清理** —— 自动找出用不到的代码
+- **无障碍检查** —— WCAG 合规扫描
+- **打包分析** —— 检测体积回归
+- **部署自动化** —— 生成 Docker、CI/CD 配置
+- **文档生成** —— 自动生成 API 文档
+
+安装命令：
 ```bash
-# 方式一：通过 Claude Code 插件市场
+claude /plugin marketplace add rohitg00/awesome-claude-code-toolkit
+```
+
+### 代码语义索引（CodeGraph）
+
+安装后 AI 能"看懂"你的代码库结构：
+- 改代码前自动查影响范围
+- 查一个函数被哪些地方调用
+- 追踪调用链路
+
+安装命令：
+```bash
+npm install -g @codegraph/mcp-server
+codegraph init -i  # 在项目根目录执行一次
+```
+
+### 跨会话记忆（Claude Mem）
+
+安装后 AI 会记住之前的决策和模式，下次对话自动带入上下文：
+```bash
 claude /plugin marketplace add thedotmack/claude-mem
-
-# 方式二：手动安装
-npm install -g claude-mem
 ```
 
-**配置方式：**
+### 文言文模式（Caveman）
 
-在 `~/.claude/settings.json` 中添加：
-
-```json
-{
-  "enabledPlugins": {
-    "claude-mem@thedotmack": true
-  }
-}
-```
-
-**作用：**
-- 自动捕获会话中的关键决策和模式
-- 后续会话自动注入相关记忆
-- 项目知识随时间积累，越用越聪明
-
-> 注意：Claude Mem 需要单独安装，不包含在本仓库中。但本配置的工作流已设计为与 Claude Mem 协同工作（P8 反思阶段会自动写入记忆）。
-
----
-
-## 这是什么？
-
-本项目是一套**生产级 Vibe Coding 配置**，包含：
-
-- **灵魂文档**（CLAUDE.md）—— 定义 AI 的行为准则、质量标准和决策逻辑
-- **146 个 Skill** —— 覆盖从需求澄清到发布监控的完整软件工程生命周期（含 mattpocock 深度对齐、共享语言、跳出细节等进阶能力）
-- **八阶段工作流** —— 感知→规划→设计→执行→验证→审查→发布→反思
-- **质量关卡**（Hooks）—— 自动化 Lint、测试、安全审计、代码审查
-
-**核心目标：** 让 Claude Code 产出**逼近资深工程师水准**的代码，并通过结构化的质量关卡确保交付可靠性。
-
----
-
-## 能力概览
-
-### 1. 八阶段 AI Native 工作流
-
-```
-感知(Perceive) → 规划(Plan) → 设计(Design) → 执行(Execute)
-                                                        ↓
-反思(Reflect) ← 发布(Ship) ← 审查(Review) ← 验证(Verify)
-```
-
-每阶段有明确的**输入、动作、输出、退出标准**，AI 可自动识别当前阶段并调用对应 Skill。
-
-| 阶段 | 核心能力 | 退出标准 |
-|------|---------|---------|
-| **感知** | 加载项目上下文、技术栈、历史记忆 | 能复述"项目为何存在" |
-| **规划** | 拆 PR 级步骤、画依赖图、对抗性审查 | 每步骤可冷启动执行 |
-| **设计** | 视觉方向、原型、动效、无障碍 | 设计评分 ≥ 7.5/10 |
-| **执行** | TDD、最小 surgial edit、原子提交 | Smoke Test 全绿 |
-| **验证** | 全量测试、浏览器 QA、Lint | 零错误 + 逐项确认 |
-| **审查** | 代码审查、设计审计、安全审计、**角色化审查**（CEO/Eng/DevEx/QA） | 无阻塞问题；所有角色视角通过 |
-| **发布** | 干净 PR、CI、部署、监控 | 5 分钟无异常 |
-| **反思** | 差异分析、经验提取、记忆固化 | 持续改进 |
-
-### 2. 量化质量标准（AI 可直接识别）
-
-**代码质量：**
-- `tsc --noEmit` 零错误
-- ESLint + Prettier 零错误
-- Smoke Test ≥ 3 断言/模块
-- 单函数复杂度 ≤ 15
-- 单文件 ≤ 400 行
-
-**设计质量（6 维度评分卡）：**
-- 视觉独特性（20%）—— 非默认字体、无 AI slop
-- 可用性（25%）—— Krug 定律、Nielsen 启发式
-- 无障碍（20%）—— WCAG 2.2 AA、语义 HTML
-- 技术质量（15%）—— Lighthouse、性能面板
-- 动效（10%）—— 60fps、`prefers-reduced-motion`
-- 文案（10%）—— 主动语态、具体标签
-- **通过线：≥ 7.5/10**
-
-**安全标准：**
-- 无敏感信息硬编码
-- 用户输入验证 + 转义
-- 参数化 SQL
-- 无 `eval()` 处理用户输入
-- OWASP Top 10 无高危
-
-### 3. 设计工作流（UI/UX 专项）
-
-- **设计策略** —— 1-2 分钟定基调、用户、差异化
-- **视觉基础** —— 字体、色彩、空间构图、暗模式
-- **动效体系** —— `transform`/`opacity` 优先、可中断、尊重减弱动效
-- **无障碍基础** —— 语义 HTML 优先于 ARIA、键盘可访问、对比度 4.5:1
-- **设计审查** —— 视觉/可用性/无障碍/技术 四维审计
-
-### 4. 146 个 Skill 覆盖全生命周期
-
-| 类别 | 数量 | 代表 Skill |
-|------|------|-----------|
-| Vibe Coding 核心 | 10+ | `vibe-coding`, `vibe-design-workflow`, `brainstorming`, `blueprint`, `grill-me`, `grill-with-docs` |
-| 设计 | 8 | `frontend-design-3-0.1.0`, `motion-patterns`, `design-system`, `prototype` |
-| 编码质量 | 5 | `coding-standards`, `tdd-workflow`, `error-handling` |
-| 测试 | 4 | `e2e-testing`, `browser-qa`, `ai-regression-testing` |
-| 调试/诊断 | 4 | `debug-pro-1.0.0`, `diagnose`, `systematic-debugging`, `zoom-out` |
-| 审查 | 5 | `caveman-review`, `plankton-code-quality`, `ui-design-review` |
-| 发布 | 3 | `deployment-patterns`, `canary-watch`, `production-audit` |
-| Git 安全 | 2 | `git-guardrails-claude-code`, `setup-pre-commit` |
-| 安全 | 3 | `security-auditor-1.0.0`, `security-scan`, `security-review` |
-| AI/Agent | 5 | `ai-first-engineering`, `continuous-agent-loop`, `agentic-engineering` |
-| GSD 工作流 | 83 | `gsd-new-project` ~ `gsd-workstreams` |
-
-### 5. 自动化 Hooks（13 个）
-
-GSD 工作流自动化钩子，部署到 `~/.claude/hooks/`：
-
-| Hook | 作用 |
-|------|------|
-| `gsd-context-monitor.js` | 监控上下文使用情况 |
-| `gsd-phase-boundary.sh` | 阶段边界检查 |
-| `gsd-prompt-guard.js` | 提示词安全护栏 |
-| `gsd-read-guard.js` | 读取操作保护 |
-| `gsd-read-injection-scanner.js` | 注入扫描 |
-| `gsd-validate-commit.sh` | 提交验证 |
-| `gsd-workflow-guard.js` | 工作流保护 |
-| `gsd-statusline.js` | 状态栏显示 |
-| 其他 | 更新检查、会话状态等 |
-
-### 6. 可选插件生态
-
-| 插件 | 安装方式 | 用途 |
-|------|---------|------|
-| **awesome-claude-code-toolkit** | `claude /plugin marketplace add rohitg00/awesome-claude-code-toolkit` | 120+ agent/plugin：架构设计、代码审查、部署自动化 |
-| **claude-mem** | `claude /plugin marketplace add thedotmack/claude-mem` | 跨会话记忆，积累项目知识 |
-
----
-
-## 适用场景
-
-- **B 端全栈应用** —— 前端 + 后端 + 数据库，需稳定交付
-- **AI Agent 开发** —— 需要结构化规划与评估
-- **CLI 工具** —— 快速构建、测试、发布
-- **设计系统** —— 统一视觉规范与组件库
+内置。默认开启精简文言文回复，减少 token 消耗。说 `"normal mode"` 关闭，`"caveman mode"` 开启。
 
 ---
 
 ## 使用示例
 
-### 示例 1：快速原型（≤ 15 分钟）
-
+**快速原型：**
 ```
-用户：做一个待办列表页面
-AI：调用 vibe-coding → Phase 0 判断为 trivial → gsd-fast → 编码 → 验证 → Done
+你：做个待办列表页面
+AI：（判断 ≤ 15 分钟）直接快速完成
 ```
 
-### 示例 2：全栈功能（完整八阶段）
-
+**全栈功能：**
 ```
-用户：做一个用户管理后台，含列表、搜索、分页、导出
+你：做个用户管理后台，含列表、搜索、分页、导出
 AI：
-  P1 感知 → 加载项目上下文
-  P2 规划 → blueprint 生成 8 步骤计划
-  P3 设计 → vibe-design-workflow → 设计评分 8.2/10
-  P4 执行 → tdd-workflow → 每模块 Smoke Test → 原子提交
-  P5 验证 → browser-qa + e2e-testing → 全绿
-  P6 审查 → requesting-code-review + security-review → 无阻塞
-  P7 发布 → gsd-ship → CI 通过 → 部署
-  P8 反思 → continuous-agent-loop → 经验写入 claude-mem
+  1. 追问：用户是谁？权限怎么分？导出什么格式？
+  2. 出 8 步计划
+  3. 设计界面，评分 8.2/10
+  4. 开发，每模块配测试
+  5. 浏览器验证通过
+  6. 多角色审查通过
+  7. 发布并监控
+  8. 总结经验
 ```
 
-### 示例 3：UI 设计专项
-
+**设计专项：**
 ```
-用户：让这个仪表盘好看点
+你：让这个仪表盘好看点
 AI：
-  调用 vibe-design-workflow
-  Phase 1 策略 → 定基调（brutalist / professional / playful）
-  Phase 2 实现 → frontend-design-3-0.1.0 + motion-patterns
-  Phase 3 审查 → ui-design-review → 6 维度评分
-  Phase 4 优化 → 打磨至 ≥ 7.5
+  1. 定基调（专业/活泼/极简？）
+  2. 选字体、配色、布局
+  3. 加动效
+  4. 6 维度评分，打磨到 ≥ 7.5
 ```
 
 ---
 
-## 工作流原理
-
-### 为什么需要结构化工作流？
-
-Claude Code 极易**过度工程化**。无蓝图时，首试成功率低，返工率高。八阶段工作流通过以下机制解决：
-
-1. **蓝图先于代码** —— 任何实现前有 PLAN.md，明确"做什么"与"不做什么"
-2. **思考者与构建者分离** —— 规划阶段用最强模型，执行阶段遵循最小 surgial edit
-3. **Smoke Test 先行** —— 每模块编码前先写测试，失败即重构信号
-4. **质量关卡不可跳过** —— 设计评分、代码审查、安全审计为硬性门槛
-
-### AI Native  vs  传统 AI 辅助
-
-| | 传统 AI 辅助 | AI Native |
-|---|---|---|
-| 交互模式 | 人发起 → AI 响应 → 人判断 | 模型自主推进，人于关键决策点介入 |
-| 计划性 | 即兴提示，无全局蓝图 | 蓝图先于代码，通过规划门 |
-| 验证 | 人眼检查 | Smoke Test + 自动化验证为必备 |
-| 质量门 | 可有可无 | Lint → Smoke → Review → Security → QA |
-| 反思 | 人发现 bug 后反馈 | 模型自主检测失败并修正 |
-
----
-
-## 目录结构
+## 目录说明
 
 ```
 .
-├── CLAUDE.md                 # 灵魂文档（行为准则 + 工作流 + 技能路由）
-├── hooks.json                # 质量关卡自动化配置（项目级）
-├── README.md                 # 本文件
-├── AGENT_INSTALL.md          # Agent 自安装指南
-├── settings.template.json    # 通用设置模板
+├── CLAUDE.md          # 灵魂文档——AI 的行为准则
+├── hooks.json         # 质量关卡配置
+├── README.md          # 本文件
+├── AGENT_INSTALL.md   # 给 AI 看的安装指南
 ├── scripts/
-│   ├── install.sh            # macOS / Linux 安装脚本
-│   └── install.ps1           # Windows 安装脚本
-├── skills/                   # 146 个 Skill 完整源码
-│   ├── vibe-coding/
-│   ├── vibe-design-workflow/
-│   ├── blueprint/
-│   ├── grill-me/
-│   ├── grill-with-docs/
-│   ├── zoom-out/
-│   ├── frontend-design-3-0.1.0/
-│   ├── ... (165 more)
-│   └── SKILL_REGISTRY.md     # Skill 清单及说明
-├── hooks/                    # GSD 自动化钩子（13 个）
-│   ├── gsd-context-monitor.js
-│   ├── gsd-prompt-guard.js
-│   ├── gsd-workflow-guard.js
-│   ├── gsd-validate-commit.sh
-│   └── ... (8 more)
-└── docs/
-    └── WORKFLOW.md           # 八阶段工作流详细说明（可选）
+│   ├── install.sh     # 一键安装脚本
+│   └── install.ps1
+├── skills/            # 146 项技能完整源码
+├── hooks/             # 13 个自动化钩子
+└── docs/              # 补充文档
 ```
 
 ---
 
-## 核心设计哲学
+## 总结
 
-基于 **Andrej Karpathy** 的 Vibe Coding 理念：
+这套配置解决的核心问题：
+1. **理解偏差** → 深度对齐 + 共享语言
+2. **设计随意** → 评分卡 + 设计规范
+3. **代码质量不稳** → 多层自动检查
+4. **改代码风险** → 影响分析
+5. **审查不全面** → 多角色视角
+6. **发布风险** → 自动化监控
 
-> "先思考，再编码。最少代码解决问题。不做猜测。"
-
-并结合生产级实践：
-- **Karpathy 谨慎原则** —— 暴露权衡，不隐藏困惑
-- **4 黄金法则** —— 极简、精准、目标驱动、可验证
-- **Claude Code 防过度工程** —— Surgical Coding Prompt：分析现有模式，最小编辑，不擅自重构
-
----
-
-## 贡献
-
-本配置为个人/团队工作流沉淀。欢迎：
-- 提交 Issue 讨论工作流改进
-- Fork 后定制适合自己团队的版本
-- 补充新的 Skill 到注册表
-
----
-
-## 许可证
-
-灵魂文档（CLAUDE.md）及本仓库配置采用 [MIT License](./LICENSE)。
-
-第三方 Skill 遵循其原始许可证。详见 [skills/SKILL_REGISTRY.md](./skills/SKILL_REGISTRY.md)。
-
----
-
-## 致谢
-
-- [Andrej Karpathy](https://karpathy.ai/) —— Vibe Coding 哲学
-- [Claude Code](https://claude.ai/code) —— Anthropic 官方 CLI
-- [Everything Claude Code (ECC)](https://github.com/affaan-m/everything-claude-code) —— Skill 生态
-- [Awesome Claude Code Toolkit](https://github.com/rohitg00/awesome-claude-code-toolkit) —— Plugin 生态
-- [GSD (Get Shit Done)](https://github.com/jasonjmcghee/GSD) —— 项目管理工作流
-
----
-
-> **记住：** 设计是解决问题，不是装饰。代码是沟通，不是炫技。如果不会自豪地展示给同行，就没做完。
+仓库地址：https://github.com/digibeing1001/claude-vibe-coding-setup
