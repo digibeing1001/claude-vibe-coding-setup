@@ -45,6 +45,39 @@
 | `caveman-review` | `.agents/skills` | 精简审查 |
 | `plankton-code-quality` | `.agents/skills` | 代码质量 |
 | `ui-design-review` | `.agents/skills` | UI 审查 |
+| `review` | mattpocock/skills | 双轴代码审查（标准 + 规范） |
+| `design-review` | garrytan/gstack | 视觉不一致与 AI slop 检测 |
+| `qa-mattpocock` | mattpocock/skills | 交互式 QA 会话 |
+
+## 架构 / 设计 Skill
+
+| Skill | 来源 | 用途 |
+|-------|------|------|
+| `design-an-interface` | mattpocock/skills | API/模块接口设计（Design It Twice） |
+| `ubiquitous-language` | mattpocock/skills | DDD 术语表提取与规范化 |
+| `request-refactor-plan` | mattpocock/skills | 重构计划与增量提交 |
+
+## 调试 Skill
+
+| Skill | 来源 | 用途 |
+|-------|------|------|
+| `debug-pro-1.0.0` | `.agents/skills` | 专业调试 |
+| `diagnose` | `.agents/skills` | 诊断 |
+| `investigate` | garrytan/gstack | 系统性根因调试 |
+
+## 安全 Skill
+
+| Skill | 来源 | 用途 |
+|-------|------|------|
+| `security-auditor-1.0.0` | `.agents/skills` | 安全审计 |
+| `security-scan` | `.agents/skills` | 安全扫描 |
+| `cso` | garrytan/gstack | OWASP + STRIDE 安全审计 |
+
+## 文档 Skill
+
+| Skill | 来源 | 用途 |
+|-------|------|------|
+| `document-generate` | garrytan/gstack | Diataxis 文档生成（教程/指南/参考/解释） |
 
 ## 调试 Skill
 
