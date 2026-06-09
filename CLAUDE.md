@@ -103,13 +103,15 @@
 - **输入：** Foundation Report
 - **动作：**
   1. **深度对齐** —— `grill-me` 或 `grill-with-docs` 深度追问，确保理解无偏差
-  2. **共享语言** —— 如用 `grill-with-docs`，同步建立/更新 `CONTEXT.md`（领域术语表）
-  3. **架构设计** —— 复杂系统调用 `code-architect` 生成架构图和接口设计
-  4. **数据模型** —— 涉及数据库时调用 `schema-designer` 设计 schema 和 ERD
-  5. **拆步骤** —— 拆 3-12 个 PR 级步骤 → 画依赖图 → 对抗性审查
+  2. **共享语言** —— 如用 `grill-with-docs`，同步建立/更新 `CONTEXT.md`；或用 `ubiquitous-language` 提取 DDD 术语表
+  3. **接口设计** —— 调用 `design-an-interface` 生成多方案 API/模块接口设计（Design It Twice）
+  4. **架构设计** —— 复杂系统调用 `code-architect` 生成架构图和接口设计
+  5. **数据模型** —— 涉及数据库时调用 `schema-designer` 设计 schema 和 ERD
+  6. **重构规划** —— 如涉及重构，调用 `request-refactor-plan` 生成增量提交计划
+  7. **拆步骤** —— 拆 3-12 个 PR 级步骤 → 画依赖图 → 对抗性审查
 - **输出：** PLAN.md + CONTEXT.md + 架构图（如适用）
 - **退出：** 每步骤可独立冷启动执行；审查无 CRITICAL；用户确认理解无误
-- **Skill：** `blueprint`, `writing-plans`, `to-prd`, `architecture-designer-0.1.0`, `plan-orchestrate`, `gsd-plan-phase`, `grill-me`, `grill-with-docs`
+- **Skill：** `blueprint`, `writing-plans`, `to-prd`, `architecture-designer-0.1.0`, `plan-orchestrate`, `gsd-plan-phase`, `grill-me`, `grill-with-docs`, `ubiquitous-language`, `design-an-interface`, `request-refactor-plan`
 - **Plugin：** `/plugin run code-architect`, `/plugin run schema-designer`, `/plugin run plan`
 
 ### P3 设计（Design）—— UI 项目必做
@@ -118,9 +120,10 @@
   1. 定基调 → ASCII Wireframe / 原型 → 设计评分卡
   2. **UI 草图** —— 调用 `ui-designer` 生成高保真设计稿或组件规范
   3. **响应式设计** —— 调用 `responsive-designer` 验证多端适配
+  4. **视觉审计** —— 调用 `design-review` 检测 AI slop 和视觉不一致
 - **输出：** DESIGN.md + 原型 + 设计稿 + 评分 ≥ 7.5
 - **退出：** 评分 ≥ 7.5/10
-- **Skill：** `vibe-design-workflow`, `frontend-design-3-0.1.0`, `prototype`, `motion-patterns`, `design-system`, `gsd-ui-phase`
+- **Skill：** `vibe-design-workflow`, `frontend-design-3-0.1.0`, `prototype`, `motion-patterns`, `design-system`, `gsd-ui-phase`, `design-review`
 - **Plugin：** `/plugin run ui-designer`, `/plugin run responsive-designer`
 
 ### P4 执行（Execute）
@@ -141,23 +144,26 @@
 
 ### P5 验证（Verify）
 - **输入：** 代码
-- **动作：** 全量测试 → 浏览器验证（UI）→ Lint → 对照 PLAN.md 逐项确认
+- **动作：** 全量测试 → 浏览器验证（UI）→ Lint → 对照 PLAN.md 逐项确认 → 手动验证功能
 - **输出：** 验证报告（全绿 / 失败清单）
 - **退出：** 测试全绿；Lint 零错误；PLAN.md 项项确认
-- **Skill：** `verification-loop`, `verification-before-completion`, `e2e-testing`, `browser-qa`, `test-runner-1.0.0`, `ai-regression-testing`, `verify`, `benchmark`
+- **Skill：** `verification-loop`, `verification-before-completion`, `e2e-testing`, `browser-qa`, `test-runner-1.0.0`, `ai-regression-testing`, `verify`, `benchmark`, `qa-mattpocock`
 
 ### P6 审查（Review）
 - **输入：** 验证通过的代码
 - **动作：**
   1. **技术维度** —— 代码审查（bugs/simplify/reuse）
-  2. **视觉维度** —— 设计审计
+  2. **视觉维度** —— 设计审计（`design-review` 检测 AI slop + 视觉不一致）
   3. **风险维度** —— 安全审计 + 无障碍审计
-  4. **角色化审查：**
+  4. **双轴审查** —— `review` 并行运行 Standards + Spec 两个子审查
+  5. **角色化审查：**
      - **CEO 视角** —— 符合商业目标？范围是否蔓延？（`product-lens`）
      - **Eng 视角** —— 架构合理？技术债可控？（`architecture-designer-0.1.0`）
      - **DevEx 视角** —— 开发者体验？onboarding 成本？（`codebase-onboarding`）
-     - **QA 视角** —— 测试覆盖？边缘情况？（`browser-qa` / `e2e-testing`）
-  5. **增强审查（Toolkit）：**
+     - **QA 视角** —— 测试覆盖？边缘情况？（`browser-qa` / `e2e-testing` / `qa-mattpocock`）
+     - **Security 视角** —— OWASP Top 10？STRIDE 威胁？（`cso` / `security-auditor-1.0.0`）
+     - **Design 视角** —— 视觉一致性？AI slop？（`design-review` / `ui-design-review`）
+  6. **增强审查（Toolkit）：**
      - **代码审查增强** —— `code-review-assistant` 分级审查（致命/严重/警告/建议）
      - **质量守护** —— `code-guardian` 安全扫描 + 坏味道检测
      - **死代码清理** —— `dead-code-finder` 移除无用代码
@@ -165,7 +171,7 @@
      - **打包分析** —— `bundle-analyzer` 检测体积回归
 - **输出：** 审查报告（问题清单 + 严重程度 + 角色化反馈 + Toolkit 扫描结果）
 - **退出：** 无阻塞问题；安全无高危；设计 ≥ 7.5；所有角色视角通过；Toolkit 无致命/严重
-- **Skill：** `requesting-code-review`, `receiving-code-review`, `caveman-review`, `plankton-code-quality`, `ui-design-review`, `security-review`, `security-auditor-1.0.0`, `security-scan`, `gsd-code-review`, `gsd-review`, `gsd-ui-review`, `simplify`, `product-lens`, `architecture-designer-0.1.0`
+- **Skill：** `requesting-code-review`, `receiving-code-review`, `review`, `caveman-review`, `plankton-code-quality`, `ui-design-review`, `design-review`, `security-review`, `security-auditor-1.0.0`, `security-scan`, `cso`, `gsd-code-review`, `gsd-review`, `gsd-ui-review`, `simplify`, `product-lens`, `architecture-designer-0.1.0`
 - **Plugin：** `/plugin run code-review-assistant`, `/plugin run code-guardian`, `/plugin run dead-code-finder`, `/plugin run security-guidance`, `/plugin run a11y-audit`, `/plugin run bundle-analyzer`
 
 ### P7 发布（Ship）
@@ -175,10 +181,10 @@
   2. **部署自动化** —— `deploy-pilot` 生成 Dockerfile、CI/CD 配置、基础设施代码
   3. **版本管理** —— `release-manager` 语义化版本管理和自动发布工作流
   4. 部署 → 5 分钟监控 → 文档更新
-  5. **文档生成** —— `codebase-documenter` 自动生成 API 文档和代码注释
+  5. **文档生成** —— `document-generate` 从代码生成 Diataxis 文档；`codebase-documenter` 生成 API 文档
 - **输出：** 合并的 PR + 部署确认 + 更新文档 + 自动生成文档
 - **退出：** CI 通过；核心指标 5 分钟无异常
-- **Skill：** `gsd-ship`, `finishing-a-development-branch`, `deployment-patterns`, `canary-watch`, `production-audit`, `gsd-docs-update`, `gsd-complete-milestone`
+- **Skill：** `gsd-ship`, `finishing-a-development-branch`, `deployment-patterns`, `canary-watch`, `production-audit`, `gsd-docs-update`, `gsd-complete-milestone`, `document-generate`
 - **Plugin：** `/plugin run deploy-pilot`, `/plugin run release-manager`, `/plugin run codebase-documenter`, `/plugin run code-explainer`
 
 ### P8 反思（Reflect）
@@ -186,7 +192,7 @@
 - **动作：** 计划 vs 实际差异 → 提取经验 → 写入 claude-mem
 - **输出：** Learnings 记录
 - **退出：** 无（持续改进）
-- **Skill：** `continuous-agent-loop`, `autonomous-loops`, `handoff`, `gsd-extract-learnings`, `gsd-pause-work`, `improve-codebase-architecture`
+- **Skill：** `continuous-agent-loop`, `handoff`, `gsd-extract-learnings`, `gsd-pause-work`, `improve-codebase-architecture`
 
 ---
 
@@ -200,23 +206,25 @@
 | **新项目** | `gsd-new-project` | `brainstorming` |
 | **需求澄清** | `brainstorming` | `product-lens` |
 | **深度对齐（追问）** | `grill-me` | — |
-| **深度对齐（带文档）** | `grill-with-docs` | `brainstorming` |
+| **深度对齐（带文档）** | `grill-with-docs` | `ubiquitous-language` |
 | **加载项目约定** | `everything-claude-code` | `codebase-onboarding` |
 | **多步骤计划** | `blueprint` | `writing-plans`, `plan-orchestrate` |
 | **PRD** | `to-prd` | — |
 | **架构设计** | `architecture-designer-0.1.0` | `plan-orchestrate` |
+| **接口设计** | `design-an-interface` | — |
+| **重构规划** | `request-refactor-plan` | — |
 | **UI 设计** | `vibe-design-workflow` | `frontend-design-3-0.1.0`, `prototype`, `motion-patterns` |
 | **设计系统** | `design-system` | — |
 | **TDD** | `tdd-workflow` | `test-driven-development` |
 | **编码规范** | `coding-standards` | — |
 | **计划执行** | `executing-plans` | `subagent-driven-development` |
 | **并行任务** | `dispatching-parallel-agents` | — |
-| **调试** | `systematic-debugging` | `debug-pro-1.0.0`, `diagnose`, `gsd-debug` |
+| **调试** | `systematic-debugging` | `debug-pro-1.0.0`, `diagnose`, `investigate`, `gsd-debug` |
 | **浏览器 QA** | `browser-qa` | `gstack` |
 | **E2E 测试** | `e2e-testing` | `test-runner-1.0.0` |
-| **代码审查** | `requesting-code-review` | `caveman-review`, `plankton-code-quality` |
-| **UI 审查** | `ui-design-review` | `vibe-design-workflow` |
-| **安全审计** | `security-review` | `security-auditor-1.0.0`, `security-scan` |
+| **代码审查** | `review` | `requesting-code-review`, `caveman-review`, `plankton-code-quality` |
+| **UI 审查** | `ui-design-review` | `design-review`, `vibe-design-workflow` |
+| **安全审计** | `cso` | `security-review`, `security-auditor-1.0.0`, `security-scan` |
 | **发布** | `gsd-ship` | `deployment-patterns`, `canary-watch` |
 | **会话交接** | `handoff` | `gsd-pause-work` |
 | **上下文压缩** | `caveman` | `compress` |
@@ -281,11 +289,11 @@
 
 ---
 
-# 附录：可用 Skill 总览（166 个）
+# 附录：可用 Skill 总览（155 个）
 
 **Vibe Coding 黄金路径 Skill：**
-`vibe-coding` → `brainstorming`/`gsd-new-project` → `blueprint`/`writing-plans` → `vibe-design-workflow`/`frontend-design-3-0.1.0` → `tdd-workflow`/`executing-plans` → `verification-loop`/`browser-qa` → `requesting-code-review`/`security-review` → `gsd-ship`/`deployment-patterns` → `continuous-agent-loop`/`handoff`
+`vibe-coding` → `brainstorming`/`gsd-new-project` → `grill-me`/`grill-with-docs`/`ubiquitous-language` → `blueprint`/`writing-plans`/`design-an-interface` → `vibe-design-workflow`/`frontend-design-3-0.1.0`/`design-review` → `tdd-workflow`/`executing-plans` → `verification-loop`/`browser-qa`/`verify` → `review`/`cso`/`security-review` → `gsd-ship`/`deployment-patterns`/`canary-watch` → `document-generate`/`handoff`
 
-**完整列表：** `agent-eval`, `agent-harness-construction`, `agentic-engineering`, `ai-first-engineering`, `ai-regression-testing`, `andrej-karpathy-skills`, `architecture-designer-0.1.0`, `autonomous-agent-harness`, `benchmark`, `blueprint`, `brainstorming`, `browser-qa`, `canary-watch`, `caveman`, `caveman-review`, `code-tour`, `codebase-onboarding`, `coding-standards`, `compress`, `continuous-agent-loop`, `debug-pro-1.0.0`, `deployment-patterns`, `design-system`, `diagnose`, `dispatching-parallel-agents`, `e2e-testing`, `ecc`, `error-handling`, `everything-claude-code`, `everything-claude-code-conventions`, `executing-plans`, `finishing-a-development-branch`, `frontend-design-3-0.1.0`, `frontend-design-direction`, `gsd-add-tests`–`gsd-workstreams` (83 个 gsd-*), `gstack`, `handoff`, `improve-codebase-architecture`, `lark-*` (25 个), `make-interfaces-feel-better`, `mattpocock`, `motion-advanced`, `motion-foundations`, `motion-patterns`, `plan-orchestrate`, `plankton-code-quality`, `product-lens`, `production-audit`, `prototype`, `receiving-code-review`, `requesting-code-review`, `rules-distill`, `search-first`, `security-auditor-1.0.0`, `security-scan`, `skill-creator-0.1.0`, `subagent-driven-development`, `systematic-debugging`, `tdd-workflow`, `tech-evaluator`, `test-driven-development`, `test-runner-1.0.0`, `to-issues`, `to-prd`, `triage`, `ui-design-review`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `verification-loop`, `vibe-coding`, `vibe-design-workflow`, `write-a-skill`, `writing-plans`, `writing-skills`
+**完整列表：** `agent-eval`, `agent-harness-construction`, `agentic-engineering`, `ai-first-engineering`, `ai-regression-testing`, `andrej-karpathy-skills`, `architecture-designer-0.1.0`, `autonomous-agent-harness`, `benchmark`, `blueprint`, `brainstorming`, `browser-qa`, `canary-watch`, `caveman`, `caveman-review`, `code-tour`, `codebase-onboarding`, `coding-standards`, `compress`, `continuous-agent-loop`, `cso`, `debug-pro-1.0.0`, `design-an-interface`, `design-review`, `design-system`, `diagnose`, `dispatching-parallel-agents`, `document-generate`, `e2e-testing`, `error-handling`, `everything-claude-code`, `everything-claude-code-conventions`, `executing-plans`, `finishing-a-development-branch`, `frontend-design-3-0.1.0`, `frontend-design-direction`, `grill-me`, `grill-with-docs`, `gsd-add-tests`–`gsd-workstreams` (67 个 gsd-*), `gstack`, `handoff`, `improve-codebase-architecture`, `investigate`, `make-interfaces-feel-better`, `motion-advanced`, `motion-foundations`, `motion-patterns`, `plan-orchestrate`, `plankton-code-quality`, `product-lens`, `production-audit`, `prototype`, `qa-mattpocock`, `receiving-code-review`, `request-refactor-plan`, `requesting-code-review`, `review`, `rules-distill`, `search-first`, `security-auditor-1.0.0`, `security-review`, `security-scan`, `setup-pre-commit`, `simplify`, `skill-creator-0.1.0`, `subagent-driven-development`, `systematic-debugging`, `tdd-workflow`, `tech-evaluator`, `test-driven-development`, `test-runner-1.0.0`, `to-issues`, `to-prd`, `triage`, `ubiquitous-language`, `ui-design-review`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `verification-loop`, `verify`, `vibe-coding`, `vibe-design-workflow`, `write-a-skill`, `writing-plans`, `writing-skills`, `zoom-out`
 
 **整合 Toolkit Plugin：** `code-architect`, `schema-designer`, `ui-designer`, `responsive-designer`, `frontend-developer`, `frontend-excellence`, `code-review-assistant`, `code-guardian`, `code-explainer`, `dead-code-finder`, `security-guidance`, `codebase-documenter`, `onboarding-guide`, `a11y-audit`, `bundle-analyzer`, `regex-builder`, `rag-builder`, `web-dev`, `feature-dev`, `product-shipper`, `pr-reviewer`, `bug-detective`, `e2e-runner`, `test-writer`, `plan`, `discuss`, `deploy-pilot`, `release-manager`, `monitoring-setup`
