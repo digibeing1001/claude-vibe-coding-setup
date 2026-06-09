@@ -91,34 +91,50 @@
 
 ### P1 感知（Perceive）
 - **输入：** 用户请求、项目上下文
-- **动作：** 加载 README + API 文档 + 设计稿 + claude-mem 历史
+- **动作：**
+  1. 加载 README + API 文档 + 设计稿 + claude-mem 历史
+  2. **代码库索引** —— 如项目有 `.codegraph/` 目录，使用 CodeGraph 快速获取项目结构和模块关系；如无，提示初始化
 - **输出：** Foundation Report（技术栈 + 模块划分 + 目标用户）
 - **退出：** 能复述"项目为何存在、目标用户是谁"
 - **Skill：** `everything-claude-code`, `codebase-onboarding`, `gsd-ingest-docs`, `search-first`
+- **Tool：** `mcp__codegraph__codegraph_files`, `mcp__codegraph__codegraph_context`
 
 ### P2 规划（Plan）
 - **输入：** Foundation Report
 - **动作：**
   1. **深度对齐** —— `grill-me` 或 `grill-with-docs` 深度追问，确保理解无偏差
   2. **共享语言** —— 如用 `grill-with-docs`，同步建立/更新 `CONTEXT.md`（领域术语表）
-  3. **拆步骤** —— 拆 3-12 个 PR 级步骤 → 画依赖图 → 对抗性审查
-- **输出：** PLAN.md + CONTEXT.md（如适用）
+  3. **架构设计** —— 复杂系统调用 `code-architect` 生成架构图和接口设计
+  4. **数据模型** —— 涉及数据库时调用 `schema-designer` 设计 schema 和 ERD
+  5. **拆步骤** —— 拆 3-12 个 PR 级步骤 → 画依赖图 → 对抗性审查
+- **输出：** PLAN.md + CONTEXT.md + 架构图（如适用）
 - **退出：** 每步骤可独立冷启动执行；审查无 CRITICAL；用户确认理解无误
 - **Skill：** `blueprint`, `writing-plans`, `to-prd`, `architecture-designer-0.1.0`, `plan-orchestrate`, `gsd-plan-phase`, `grill-me`, `grill-with-docs`
+- **Plugin：** `/plugin run code-architect`, `/plugin run schema-designer`, `/plugin run plan`
 
 ### P3 设计（Design）—— UI 项目必做
 - **输入：** PLAN.md
-- **动作：** 定基调 → ASCII Wireframe / 原型 → 设计评分卡
-- **输出：** DESIGN.md + 原型 + 评分 ≥ 7.5
+- **动作：**
+  1. 定基调 → ASCII Wireframe / 原型 → 设计评分卡
+  2. **UI 草图** —— 调用 `ui-designer` 生成高保真设计稿或组件规范
+  3. **响应式设计** —— 调用 `responsive-designer` 验证多端适配
+- **输出：** DESIGN.md + 原型 + 设计稿 + 评分 ≥ 7.5
 - **退出：** 评分 ≥ 7.5/10
 - **Skill：** `vibe-design-workflow`, `frontend-design-3-0.1.0`, `prototype`, `motion-patterns`, `design-system`, `gsd-ui-phase`
+- **Plugin：** `/plugin run ui-designer`, `/plugin run responsive-designer`
 
 ### P4 执行（Execute）
 - **输入：** PLAN.md / DESIGN.md / CONTEXT.md
-- **动作：** `using-git-worktrees` → Smoke Test 先行 → RED-GREEN-REFACTOR → 原子提交
+- **动作：**
+  1. `using-git-worktrees` → Smoke Test 先行 → RED-GREEN-REFACTOR → 原子提交
+  2. **代码影响分析** —— 修改前调用 CodeGraph 的 `codegraph_impact` 和 `codegraph_callers` 评估变更范围
+  3. **前端实现** —— UI 组件开发时调用 `frontend-developer` 确保最佳实践
+  4. **前端架构** —— 复杂页面调用 `frontend-excellence` 进行架构指导
 - **输出：** 代码 + Smoke Test + 提交历史
 - **退出：** Smoke Test 全绿；Lint 零错误
 - **Skill：** `tdd-workflow`, `test-driven-development`, `coding-standards`, `error-handling`, `executing-plans`, `subagent-driven-development`, `dispatching-parallel-agents`, `gsd-execute-phase`
+- **Plugin：** `/plugin run frontend-developer`, `/plugin run frontend-excellence`
+- **Tool：** `mcp__codegraph__codegraph_impact`, `mcp__codegraph__codegraph_callers`, `mcp__codegraph__codegraph_trace`
 - **规则：** "Analyze existing patterns. Minimal edits. Don't refactor unless asked."
 - **检查点：** 每 3 模块 → Refactor Checkpoint（重复代码、接口一致性、命名）
 - **紧急恢复：** 迷失/过度复杂时 → `zoom-out` 跳出细节看全局
@@ -136,21 +152,34 @@
   1. **技术维度** —— 代码审查（bugs/simplify/reuse）
   2. **视觉维度** —— 设计审计
   3. **风险维度** —— 安全审计 + 无障碍审计
-  4. **角色化审查（新增）：**
+  4. **角色化审查：**
      - **CEO 视角** —— 符合商业目标？范围是否蔓延？（`product-lens`）
      - **Eng 视角** —— 架构合理？技术债可控？（`architecture-designer-0.1.0`）
-     - **DevEx 视角** —— 开发者体验？ onboarding 成本？（`codebase-onboarding`）
+     - **DevEx 视角** —— 开发者体验？onboarding 成本？（`codebase-onboarding`）
      - **QA 视角** —— 测试覆盖？边缘情况？（`browser-qa` / `e2e-testing`）
-- **输出：** 审查报告（问题清单 + 严重程度 + 角色化反馈）
-- **退出：** 无阻塞问题；安全无高危；设计 ≥ 7.5；所有角色视角通过
+  5. **增强审查（Toolkit）：**
+     - **代码审查增强** —— `code-review-assistant` 分级审查（致命/严重/警告/建议）
+     - **质量守护** —— `code-guardian` 安全扫描 + 坏味道检测
+     - **死代码清理** —— `dead-code-finder` 移除无用代码
+     - **无障碍审计** —— `a11y-audit` WCAG 合规检查
+     - **打包分析** —— `bundle-analyzer` 检测体积回归
+- **输出：** 审查报告（问题清单 + 严重程度 + 角色化反馈 + Toolkit 扫描结果）
+- **退出：** 无阻塞问题；安全无高危；设计 ≥ 7.5；所有角色视角通过；Toolkit 无致命/严重
 - **Skill：** `requesting-code-review`, `receiving-code-review`, `caveman-review`, `plankton-code-quality`, `ui-design-review`, `security-review`, `security-auditor-1.0.0`, `security-scan`, `gsd-code-review`, `gsd-review`, `gsd-ui-review`, `simplify`, `product-lens`, `architecture-designer-0.1.0`
+- **Plugin：** `/plugin run code-review-assistant`, `/plugin run code-guardian`, `/plugin run dead-code-finder`, `/plugin run security-guidance`, `/plugin run a11y-audit`, `/plugin run bundle-analyzer`
 
 ### P7 发布（Ship）
 - **输入：** 审查通过的代码
-- **动作：** 干净 PR → CI 全绿 → 部署 → 5 分钟监控 → 文档更新
-- **输出：** 合并的 PR + 部署确认 + 更新文档
+- **动作：**
+  1. 干净 PR → CI 全绿
+  2. **部署自动化** —— `deploy-pilot` 生成 Dockerfile、CI/CD 配置、基础设施代码
+  3. **版本管理** —— `release-manager` 语义化版本管理和自动发布工作流
+  4. 部署 → 5 分钟监控 → 文档更新
+  5. **文档生成** —— `codebase-documenter` 自动生成 API 文档和代码注释
+- **输出：** 合并的 PR + 部署确认 + 更新文档 + 自动生成文档
 - **退出：** CI 通过；核心指标 5 分钟无异常
 - **Skill：** `gsd-ship`, `finishing-a-development-branch`, `deployment-patterns`, `canary-watch`, `production-audit`, `gsd-docs-update`, `gsd-complete-milestone`
+- **Plugin：** `/plugin run deploy-pilot`, `/plugin run release-manager`, `/plugin run codebase-documenter`, `/plugin run code-explainer`
 
 ### P8 反思（Reflect）
 - **输入：** 发布结果
@@ -194,6 +223,17 @@
 | **跳出细节看全局** | `zoom-out` | `blueprint` |
 | **Git 安全护栏** | `git-guardrails-claude-code` | — |
 | **预提交钩子设置** | `setup-pre-commit` | — |
+| **代码库索引** | `mcp__codegraph__codegraph_init` | `mcp__codegraph__codegraph_files` |
+| **代码影响分析** | `mcp__codegraph__codegraph_impact` | `mcp__codegraph__codegraph_callers` |
+| **调用链路追踪** | `mcp__codegraph__codegraph_trace` | `mcp__codegraph__codegraph_explore` |
+| **架构设计（Plugin）** | `/plugin run code-architect` | `/plugin run schema-designer` |
+| **前端实现（Plugin）** | `/plugin run frontend-developer` | `/plugin run frontend-excellence` |
+| **代码审查增强（Plugin）** | `/plugin run code-review-assistant` | `/plugin run code-guardian` |
+| **死代码检测（Plugin）** | `/plugin run dead-code-finder` | — |
+| **无障碍审计（Plugin）** | `/plugin run a11y-audit` | — |
+| **打包分析（Plugin）** | `/plugin run bundle-analyzer` | — |
+| **部署自动化（Plugin）** | `/plugin run deploy-pilot` | `/plugin run release-manager` |
+| **文档生成（Plugin）** | `/plugin run codebase-documenter` | `/plugin run code-explainer` |
 | **紧急：迷失** | `blueprint` / `zoom-out` | `gsd-explore` |
 | **紧急：范围蔓延** | `product-lens` | `plan-orchestrate` |
 

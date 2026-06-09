@@ -101,6 +101,23 @@ done
 
 echo "  ✓ $SKILL_COUNT skills installed"
 
+# 复制 hooks
+REPO_HOOKS="$(dirname "$0")/../hooks"
+if [ -d "$REPO_HOOKS" ] && [ "$(ls -A "$REPO_HOOKS" 2>/dev/null)" ]; then
+    echo ""
+    echo "Installing GSD automation hooks..."
+    mkdir -p "$CLAUDE_DIR/hooks"
+    HOOK_COUNT=0
+    for hook in "$REPO_HOOKS"/*; do
+        if [ -f "$hook" ]; then
+            hook_name=$(basename "$hook")
+            cp "$hook" "$CLAUDE_DIR/hooks/$hook_name"
+            ((HOOK_COUNT++))
+        fi
+    done
+    echo "  ✓ $HOOK_COUNT hooks installed to $CLAUDE_DIR/hooks/"
+fi
+
 # 检查 awesome-claude-code-toolkit 插件
 PLUGIN_DIR="$HOME/.claude/plugins/awesome-claude-code-toolkit"
 echo ""
@@ -108,9 +125,17 @@ if [ -d "$PLUGIN_DIR" ]; then
     echo "✓ awesome-claude-code-toolkit plugin already installed"
 else
     echo "⚠ awesome-claude-code-toolkit plugin not found"
-    echo "  You can install it from: https://github.com/rohitg00/awesome-claude-code-toolkit"
-    echo "  Or run: git clone https://github.com/rohitg00/awesome-claude-code-toolkit ~/.claude/plugins/awesome-claude-code-toolkit"
+    echo "  Install: claude /plugin marketplace add rohitg00/awesome-claude-code-toolkit"
+    echo "  Or: git clone https://github.com/rohitg00/awesome-claude-code-toolkit ~/.claude/plugins/awesome-claude-code-toolkit"
 fi
+
+# 检查 CodeGraph
+CODEGRAPH_DIR="$HOME/.claude/plugins/codegraph"
+echo ""
+echo "CodeGraph MCP (optional but recommended):"
+echo "  Install: npm install -g @codegraph/mcp-server"
+echo "  Init per project: codegraph init -i"
+echo "  Enables: symbol search, impact analysis, call tracing"
 
 # 完成
 echo ""
