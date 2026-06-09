@@ -1,0 +1,112 @@
+{
+  "_comment": "Claude Code 自动化质量关卡 Hooks. 复制到项目根目录 .claude/hooks.json 以启用项目级自动化.",
+  "version": "1.0",
+  "hooks": {
+    "pre-commit": {
+      "description": "每次代码编辑前自动运行",
+      "commands": [
+        {
+          "name": "Prettier Format",
+          "cmd": "npx prettier --write .",
+          "condition": "file_exists:package.json"
+        },
+        {
+          "name": "ESLint Fix",
+          "cmd": "npx eslint --fix .",
+          "condition": "file_exists:eslint.config.js OR file_exists:.eslintrc.json OR file_exists:.eslintrc.cjs"
+        },
+        {
+          "name": "TypeScript Check",
+          "cmd": "npx tsc --noEmit",
+          "condition": "file_exists:tsconfig.json"
+        }
+      ],
+      "on_failure": "block"
+    },
+    "pre-test": {
+      "description": "运行测试前",
+      "commands": [
+        {
+          "name": "Unit Tests",
+          "cmd": "npx vitest run --coverage",
+          "condition": "file_exists:vitest.config.ts OR file_exists:vitest.config.js"
+        },
+        {
+          "name": "E2E Tests",
+          "cmd": "npx playwright test",
+          "condition": "file_exists:playwright.config.ts OR file_exists:playwright.config.js"
+        }
+      ],
+      "on_failure": "warn"
+    },
+    "pre-ship": {
+      "description": "发布/部署前",
+      "skills": [
+        "security-review",
+        "qa",
+        "code-review"
+      ],
+      "commands": [
+        {
+          "name": "Security Audit",
+          "cmd": "npm audit --audit-level=moderate",
+          "condition": "file_exists:package.json"
+        },
+        {
+          "name": "Build Verification",
+          "cmd": "npm run build",
+          "condition": "file_exists:package.json"
+        }
+      ],
+      "on_failure": "block"
+    },
+    "pre-merge": {
+      "description": "合并代码前",
+      "skills": [
+        "simplify",
+        "devex-review"
+      ],
+      "commands": [
+        {
+          "name": "Final Test Run",
+          "cmd": "npm test",
+          "condition": "file_exists:package.json"
+        }
+      ],
+      "on_failure": "block"
+    },
+    "post-commit": {
+      "description": "代码提交后",
+      "commands": [
+        {
+          "name": "Git Status Check",
+          "cmd": "git status --short",
+          "condition": "git_repo"
+        }
+      ]
+    }
+  },
+  "quality_gates": {
+    "lint": {
+      "trigger": "on_save",
+      "required": true
+    },
+    "smoke_test": {
+      "trigger": "per_module",
+      "min_tests": 10,
+      "refactor_threshold": 3
+    },
+    "code_review": {
+      "trigger": "per_feature",
+      "dimensions": ["correctness", "simplicity", "security", "performance", "maintainability"]
+    },
+    "security": {
+      "trigger": "pre_release",
+      "standard": "OWASP_Top_10"
+    },
+    "qa": {
+      "trigger": "pre_release",
+      "tools": ["playwright", "lighthouse"]
+    }
+  }
+}

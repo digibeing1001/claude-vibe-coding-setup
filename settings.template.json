@@ -1,0 +1,18 @@
+{
+  "env": {},
+  "permissions": {
+    "allow": [
+      "Bash(git clone *)",
+      "Bash(cp *)",
+      "Bash(mkdir -p *)",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(echo *)",
+      "Bash(claude --version)",
+      "Bash(npm install *)",
+      "Bash(npx *)"
+    ]
+  },
+  "effortLevel": "high",
+  "skipWorkflowUsageWarning": true
+}

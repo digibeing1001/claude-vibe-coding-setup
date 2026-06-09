@@ -1,0 +1,234 @@
+# 灵魂准则
+
+> 基于 Andrej Karpathy 哲学：谨慎 > 速度。简单任务自行判断。
+
+## 1. 先思考，再编码
+
+- 不确定 → 提问。不假设。
+- 多理解 → 呈现选项，不默默选。
+- 有简单方案 → 说出来。
+
+## 2. 极简优先
+
+- 不加需求外功能。不抽象一次性代码。不提供未要求的灵活性。
+- 不处理不可能场景的错误。
+- 200行能压到50行 → 重写。
+
+## 3. 精准修改
+
+- 不碰相邻代码、注释、格式。不重构没坏的东西。匹配现有风格。
+- 只删**你的改动**导致的孤儿代码。
+- 检验：每一行改动追溯到用户请求。
+
+## 4. 目标驱动
+
+- "添加验证" → "为无效输入写测试，让它们通过"
+- "修复bug" → "写复现测试，让它通过"
+- "重构X" → "重构前后测试都通过"
+
+---
+
+# 生产级标准定义（量化指标）
+
+## 代码质量门
+
+| 维度 | 通过标准 | 验证方式 |
+|------|---------|---------|
+| **类型安全** | `tsc --noEmit` 零错误 | 命令行 |
+| **Lint** | ESLint + Prettier 零错误 | 命令行 |
+| **测试覆盖** | 修改域有 Smoke Test（≥3 个断言） | 测试运行 |
+| **死代码** | 无未使用导入/变量/函数（ESLint `no-unused`） | 静态分析 |
+| **循环复杂度** | 单函数 ≤ 15 | 静态分析 |
+| **文件行数** | 单文件 ≤ 400 行（超则拆分） | 人工 |
+
+## 设计质量门（UI 项目）
+
+| 维度 | 权重 | 通过标准 | 验证方式 |
+|------|------|---------|---------|
+| 视觉独特性 | 20% | 非默认字体、无紫色渐变白底、有明确调色板 | 肉眼 |
+| 可用性 | 25% | Krug 定律：自明、点击无痛苦、文案可扫描 | 启发式评估 |
+| 无障碍 | 20% | WCAG 2.2 AA：正文 4.5:1、UI 3:1、语义 HTML、键盘可访问 | axe-core / 手动 |
+| 技术质量 | 15% | 图片有尺寸、首屏外 lazy、无 `transition: all`、动画 60fps | Lighthouse |
+| 动效 | 10% | 仅 `transform`/`opacity`、尊重 `prefers-reduced-motion`、可中断 | 性能面板 |
+| 文案 | 10% | 主动语态、具体按钮标签、错误信息含下一步 | 人工 |
+| **总分** | 100% | **≥ 7.5/10** | 自评 |
+
+## 测试标准
+
+- Smoke Test：每模块 ≥ 3 个断言，verbose 说明"测什么、为何测"
+- E2E：覆盖主链路（登录→核心操作→退出）
+- 3+ 测试失败 → 模块需重构
+- 优先 E2E，非 unit test
+
+## 安全标准
+
+- 无敏感信息硬编码（密钥、密码、token）
+- 用户输入有验证 + 转义
+- SQL 用参数化查询
+- 无 `eval()` / `new Function()` 处理用户输入
+- OWASP Top 10 自查无高危
+
+---
+
+# AI Native 八阶段工作流
+
+## 决策树
+
+```
+用户说 "build X"
+    │
+    ▼
+<= 15 min ? ──→ gsd-fast / caveman → 验证 → Done
+    │
+    └─→ > 15 min
+            │
+            UI ? ──→ 含 Phase 3 设计
+            │
+            新/现有项目 ? ──→ gsd-new-project / brainstorming
+```
+
+## 阶段定义（输入 → 动作 → 输出 → 退出标准）
+
+### P1 感知（Perceive）
+- **输入：** 用户请求、项目上下文
+- **动作：** 加载 README + API 文档 + 设计稿 + claude-mem 历史
+- **输出：** Foundation Report（技术栈 + 模块划分 + 目标用户）
+- **退出：** 能复述"项目为何存在、目标用户是谁"
+- **Skill：** `everything-claude-code`, `codebase-onboarding`, `gsd-ingest-docs`, `search-first`
+
+### P2 规划（Plan）
+- **输入：** Foundation Report
+- **动作：** 拆 3-12 个 PR 级步骤 → 画依赖图 → 对抗性审查
+- **输出：** PLAN.md（步骤 + 验证命令 + 回滚策略）
+- **退出：** 每步骤可独立冷启动执行；审查无 CRITICAL
+- **Skill：** `blueprint`, `writing-plans`, `to-prd`, `architecture-designer-0.1.0`, `plan-orchestrate`, `gsd-plan-phase`
+
+### P3 设计（Design）—— UI 项目必做
+- **输入：** PLAN.md
+- **动作：** 定基调 → ASCII Wireframe / 原型 → 设计评分卡
+- **输出：** DESIGN.md + 原型 + 评分 ≥ 7.5
+- **退出：** 评分 ≥ 7.5/10
+- **Skill：** `vibe-design-workflow`, `frontend-design-3-0.1.0`, `prototype`, `motion-patterns`, `design-system`, `gsd-ui-phase`
+
+### P4 执行（Execute）
+- **输入：** PLAN.md / DESIGN.md
+- **动作：** `using-git-worktrees` → Smoke Test 先行 → RED-GREEN-REFACTOR → 原子提交
+- **输出：** 代码 + Smoke Test + 提交历史
+- **退出：** Smoke Test 全绿；Lint 零错误
+- **Skill：** `tdd-workflow`, `test-driven-development`, `coding-standards`, `error-handling`, `executing-plans`, `subagent-driven-development`, `dispatching-parallel-agents`, `gsd-execute-phase`
+- **规则：** "Analyze existing patterns. Minimal edits. Don't refactor unless asked."
+- **检查点：** 每 3 模块 → Refactor Checkpoint（重复代码、接口一致性、命名）
+
+### P5 验证（Verify）
+- **输入：** 代码
+- **动作：** 全量测试 → 浏览器验证（UI）→ Lint → 对照 PLAN.md 逐项确认
+- **输出：** 验证报告（全绿 / 失败清单）
+- **退出：** 测试全绿；Lint 零错误；PLAN.md 项项确认
+- **Skill：** `verification-loop`, `verification-before-completion`, `e2e-testing`, `browser-qa`, `test-runner-1.0.0`, `ai-regression-testing`, `verify`, `benchmark`
+
+### P6 审查（Review）
+- **输入：** 验证通过的代码
+- **动作：** 代码审查（bugs/simplify/reuse）→ 设计审计 → 安全审计 → 无障碍审计
+- **输出：** 审查报告（问题清单 + 严重程度）
+- **退出：** 无阻塞问题；安全无高危；设计 ≥ 7.5
+- **Skill：** `requesting-code-review`, `receiving-code-review`, `caveman-review`, `plankton-code-quality`, `ui-design-review`, `security-review`, `security-auditor-1.0.0`, `security-scan`, `gsd-code-review`, `gsd-review`, `gsd-ui-review`, `simplify`
+
+### P7 发布（Ship）
+- **输入：** 审查通过的代码
+- **动作：** 干净 PR → CI 全绿 → 部署 → 5 分钟监控 → 文档更新
+- **输出：** 合并的 PR + 部署确认 + 更新文档
+- **退出：** CI 通过；核心指标 5 分钟无异常
+- **Skill：** `gsd-ship`, `finishing-a-development-branch`, `deployment-patterns`, `canary-watch`, `production-audit`, `gsd-docs-update`, `gsd-complete-milestone`
+
+### P8 反思（Reflect）
+- **输入：** 发布结果
+- **动作：** 计划 vs 实际差异 → 提取经验 → 写入 claude-mem
+- **输出：** Learnings 记录
+- **退出：** 无（持续改进）
+- **Skill：** `continuous-agent-loop`, `autonomous-loops`, `handoff`, `gsd-extract-learnings`, `gsd-pause-work`, `improve-codebase-architecture`
+
+---
+
+# 技能路由表
+
+**原则：** 不确定 → 调 skill。Process skill > Implementation skill。`vibe-coding` 为 PRIMARY 入口。
+
+| 场景 | 主 Skill | 辅助 Skill |
+|------|---------|-----------|
+| **任何创建/构建/设计请求** | `vibe-coding` | — |
+| **新项目** | `gsd-new-project` | `brainstorming` |
+| **需求澄清** | `brainstorming` | `product-lens` |
+| **加载项目约定** | `everything-claude-code` | `codebase-onboarding` |
+| **多步骤计划** | `blueprint` | `writing-plans`, `plan-orchestrate` |
+| **PRD** | `to-prd` | — |
+| **架构设计** | `architecture-designer-0.1.0` | `plan-orchestrate` |
+| **UI 设计** | `vibe-design-workflow` | `frontend-design-3-0.1.0`, `prototype`, `motion-patterns` |
+| **设计系统** | `design-system` | — |
+| **TDD** | `tdd-workflow` | `test-driven-development` |
+| **编码规范** | `coding-standards` | — |
+| **计划执行** | `executing-plans` | `subagent-driven-development` |
+| **并行任务** | `dispatching-parallel-agents` | — |
+| **调试** | `systematic-debugging` | `debug-pro-1.0.0`, `diagnose`, `gsd-debug` |
+| **浏览器 QA** | `browser-qa` | `gstack` |
+| **E2E 测试** | `e2e-testing` | `test-runner-1.0.0` |
+| **代码审查** | `requesting-code-review` | `caveman-review`, `plankton-code-quality` |
+| **UI 审查** | `ui-design-review` | `vibe-design-workflow` |
+| **安全审计** | `security-review` | `security-auditor-1.0.0`, `security-scan` |
+| **发布** | `gsd-ship` | `deployment-patterns`, `canary-watch` |
+| **会话交接** | `handoff` | `gsd-pause-work` |
+| **上下文压缩** | `caveman` | `compress` |
+| **紧急：迷失** | `blueprint` | `gsd-explore` |
+| **紧急：范围蔓延** | `product-lens` | `plan-orchestrate` |
+
+---
+
+# 质量关卡（Hooks）
+
+`.claude/hooks.json`：
+
+```json
+{
+  "pre-commit": {
+    "commands": [
+      "prettier --write .",
+      "eslint --fix .",
+      "tsc --noEmit"
+    ]
+  },
+  "pre-test": {
+    "commands": [
+      "vitest run --coverage",
+      "playwright test"
+    ]
+  },
+  "pre-ship": {
+    "skills": ["security-review", "browser-qa", "code-review"]
+  },
+  "pre-merge": {
+    "skills": ["simplify", "caveman-review"]
+  }
+}
+```
+
+**关卡速查：**
+
+| 关卡 | 触发 | 检查 | 通过 |
+|------|------|------|------|
+| Lint | 保存 | Prettier/ESLint/TS | 零错误 |
+| Smoke Test | 每模块 | ≥3 断言 | 全绿 |
+| Design Score | 设计完成 | 6 维度 | ≥ 7.5/10 |
+| Code Review | 功能完成 | bugs/simplify/reuse | 无阻塞 |
+| Security | 发布前 | OWASP/密钥/注入 | 无高危 |
+| Browser QA | 发布前 | 截图/响应式/E2E | 无回归 |
+| Production | 发布后 5min | 核心指标 | 无异常 |
+
+---
+
+# 附录：可用 Skill 总览（166 个）
+
+**Vibe Coding 黄金路径 Skill：**
+`vibe-coding` → `brainstorming`/`gsd-new-project` → `blueprint`/`writing-plans` → `vibe-design-workflow`/`frontend-design-3-0.1.0` → `tdd-workflow`/`executing-plans` → `verification-loop`/`browser-qa` → `requesting-code-review`/`security-review` → `gsd-ship`/`deployment-patterns` → `continuous-agent-loop`/`handoff`
+
+**完整列表：** `agent-eval`, `agent-harness-construction`, `agentic-engineering`, `ai-first-engineering`, `ai-regression-testing`, `andrej-karpathy-skills`, `architecture-designer-0.1.0`, `autonomous-agent-harness`, `benchmark`, `blueprint`, `brainstorming`, `browser-qa`, `canary-watch`, `caveman`, `caveman-review`, `code-tour`, `codebase-onboarding`, `coding-standards`, `compress`, `continuous-agent-loop`, `debug-pro-1.0.0`, `deployment-patterns`, `design-system`, `diagnose`, `dispatching-parallel-agents`, `e2e-testing`, `ecc`, `error-handling`, `everything-claude-code`, `everything-claude-code-conventions`, `executing-plans`, `finishing-a-development-branch`, `frontend-design-3-0.1.0`, `frontend-design-direction`, `gsd-add-tests`–`gsd-workstreams` (83 个 gsd-*), `gstack`, `handoff`, `improve-codebase-architecture`, `lark-*` (25 个), `make-interfaces-feel-better`, `mattpocock`, `motion-advanced`, `motion-foundations`, `motion-patterns`, `plan-orchestrate`, `plankton-code-quality`, `product-lens`, `production-audit`, `prototype`, `receiving-code-review`, `requesting-code-review`, `rules-distill`, `search-first`, `security-auditor-1.0.0`, `security-scan`, `skill-creator-0.1.0`, `subagent-driven-development`, `systematic-debugging`, `tdd-workflow`, `tech-evaluator`, `test-driven-development`, `test-runner-1.0.0`, `to-issues`, `to-prd`, `triage`, `ui-design-review`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `verification-loop`, `vibe-coding`, `vibe-design-workflow`, `write-a-skill`, `writing-plans`, `writing-skills`
+
+**整合 Toolkit Plugin：** `code-architect`, `schema-designer`, `ui-designer`, `responsive-designer`, `frontend-developer`, `frontend-excellence`, `code-review-assistant`, `code-guardian`, `code-explainer`, `dead-code-finder`, `security-guidance`, `codebase-documenter`, `onboarding-guide`, `a11y-audit`, `bundle-analyzer`, `regex-builder`, `rag-builder`, `web-dev`, `feature-dev`, `product-shipper`, `pr-reviewer`, `bug-detective`, `e2e-runner`, `test-writer`, `plan`, `discuss`, `deploy-pilot`, `release-manager`, `monitoring-setup`
