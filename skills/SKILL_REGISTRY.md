@@ -84,12 +84,6 @@
 
 来源：`~/.claude/skills/`（备份恢复）
 
-## 飞书 Lark Skill（25 个）
-
-`lark-doc`, `lark-im`, `lark-calendar`, `lark-base` 等。
-
-来源：`~/.agents/skills/`
-
 ## 安装说明
 
 ### 方式一：使用 install.sh 脚本（推荐）
