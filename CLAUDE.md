@@ -98,10 +98,13 @@
 
 ### P2 规划（Plan）
 - **输入：** Foundation Report
-- **动作：** 拆 3-12 个 PR 级步骤 → 画依赖图 → 对抗性审查
-- **输出：** PLAN.md（步骤 + 验证命令 + 回滚策略）
-- **退出：** 每步骤可独立冷启动执行；审查无 CRITICAL
-- **Skill：** `blueprint`, `writing-plans`, `to-prd`, `architecture-designer-0.1.0`, `plan-orchestrate`, `gsd-plan-phase`
+- **动作：**
+  1. **深度对齐** —— `grill-me` 或 `grill-with-docs` 深度追问，确保理解无偏差
+  2. **共享语言** —— 如用 `grill-with-docs`，同步建立/更新 `CONTEXT.md`（领域术语表）
+  3. **拆步骤** —— 拆 3-12 个 PR 级步骤 → 画依赖图 → 对抗性审查
+- **输出：** PLAN.md + CONTEXT.md（如适用）
+- **退出：** 每步骤可独立冷启动执行；审查无 CRITICAL；用户确认理解无误
+- **Skill：** `blueprint`, `writing-plans`, `to-prd`, `architecture-designer-0.1.0`, `plan-orchestrate`, `gsd-plan-phase`, `grill-me`, `grill-with-docs`
 
 ### P3 设计（Design）—— UI 项目必做
 - **输入：** PLAN.md
@@ -111,13 +114,14 @@
 - **Skill：** `vibe-design-workflow`, `frontend-design-3-0.1.0`, `prototype`, `motion-patterns`, `design-system`, `gsd-ui-phase`
 
 ### P4 执行（Execute）
-- **输入：** PLAN.md / DESIGN.md
+- **输入：** PLAN.md / DESIGN.md / CONTEXT.md
 - **动作：** `using-git-worktrees` → Smoke Test 先行 → RED-GREEN-REFACTOR → 原子提交
 - **输出：** 代码 + Smoke Test + 提交历史
 - **退出：** Smoke Test 全绿；Lint 零错误
 - **Skill：** `tdd-workflow`, `test-driven-development`, `coding-standards`, `error-handling`, `executing-plans`, `subagent-driven-development`, `dispatching-parallel-agents`, `gsd-execute-phase`
 - **规则：** "Analyze existing patterns. Minimal edits. Don't refactor unless asked."
 - **检查点：** 每 3 模块 → Refactor Checkpoint（重复代码、接口一致性、命名）
+- **紧急恢复：** 迷失/过度复杂时 → `zoom-out` 跳出细节看全局
 
 ### P5 验证（Verify）
 - **输入：** 代码
@@ -128,10 +132,18 @@
 
 ### P6 审查（Review）
 - **输入：** 验证通过的代码
-- **动作：** 代码审查（bugs/simplify/reuse）→ 设计审计 → 安全审计 → 无障碍审计
-- **输出：** 审查报告（问题清单 + 严重程度）
-- **退出：** 无阻塞问题；安全无高危；设计 ≥ 7.5
-- **Skill：** `requesting-code-review`, `receiving-code-review`, `caveman-review`, `plankton-code-quality`, `ui-design-review`, `security-review`, `security-auditor-1.0.0`, `security-scan`, `gsd-code-review`, `gsd-review`, `gsd-ui-review`, `simplify`
+- **动作：**
+  1. **技术维度** —— 代码审查（bugs/simplify/reuse）
+  2. **视觉维度** —— 设计审计
+  3. **风险维度** —— 安全审计 + 无障碍审计
+  4. **角色化审查（新增）：**
+     - **CEO 视角** —— 符合商业目标？范围是否蔓延？（`product-lens`）
+     - **Eng 视角** —— 架构合理？技术债可控？（`architecture-designer-0.1.0`）
+     - **DevEx 视角** —— 开发者体验？ onboarding 成本？（`codebase-onboarding`）
+     - **QA 视角** —— 测试覆盖？边缘情况？（`browser-qa` / `e2e-testing`）
+- **输出：** 审查报告（问题清单 + 严重程度 + 角色化反馈）
+- **退出：** 无阻塞问题；安全无高危；设计 ≥ 7.5；所有角色视角通过
+- **Skill：** `requesting-code-review`, `receiving-code-review`, `caveman-review`, `plankton-code-quality`, `ui-design-review`, `security-review`, `security-auditor-1.0.0`, `security-scan`, `gsd-code-review`, `gsd-review`, `gsd-ui-review`, `simplify`, `product-lens`, `architecture-designer-0.1.0`
 
 ### P7 发布（Ship）
 - **输入：** 审查通过的代码
@@ -158,6 +170,8 @@
 | **任何创建/构建/设计请求** | `vibe-coding` | — |
 | **新项目** | `gsd-new-project` | `brainstorming` |
 | **需求澄清** | `brainstorming` | `product-lens` |
+| **深度对齐（追问）** | `grill-me` | — |
+| **深度对齐（带文档）** | `grill-with-docs` | `brainstorming` |
 | **加载项目约定** | `everything-claude-code` | `codebase-onboarding` |
 | **多步骤计划** | `blueprint` | `writing-plans`, `plan-orchestrate` |
 | **PRD** | `to-prd` | — |
@@ -177,7 +191,10 @@
 | **发布** | `gsd-ship` | `deployment-patterns`, `canary-watch` |
 | **会话交接** | `handoff` | `gsd-pause-work` |
 | **上下文压缩** | `caveman` | `compress` |
-| **紧急：迷失** | `blueprint` | `gsd-explore` |
+| **跳出细节看全局** | `zoom-out` | `blueprint` |
+| **Git 安全护栏** | `git-guardrails-claude-code` | — |
+| **预提交钩子设置** | `setup-pre-commit` | — |
+| **紧急：迷失** | `blueprint` / `zoom-out` | `gsd-explore` |
 | **紧急：范围蔓延** | `product-lens` | `plan-orchestrate` |
 
 ---
