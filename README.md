@@ -8,11 +8,23 @@
 
 装了这个配置后，你对 Claude Code 说"帮我做个后台管理系统"，它会自动走完一整套工程流程——先问清楚你要什么，再出设计方案，再写代码，再测试，再检查，最后发布。而不是一上来就直接写代码，写完才发现理解错了。
 
+**2026-06-14 迭代重点：** 这套配置已经从 Claude Code 专用包升级为通用 Vibe Coding Harness，安装目标覆盖 Claude Code、Codex、Hermes、OpenClaw。默认安装模式是 `preserve`，会优先复用你本地已有的同名 Skill，避免覆盖个人规则；只有显式传 `--mode overwrite` 才会覆盖，并且会先备份。
+
 ---
 
-## 先装 Claude Code
+## 先选择宿主
 
-如果你还没装：
+你可以把它安装到不同 coding agent 宿主：
+
+| 宿主 | 默认 Skill 目录 | 安装命令 |
+|------|----------------|----------|
+| Codex | `~/.codex/skills` | `python scripts/install-universal.py --host codex --mode preserve` |
+| Claude Code | `~/.claude/skills` | `python scripts/install-universal.py --host claude --mode preserve --install-rules --install-hooks` |
+| Hermes | `~/.hermes/skills` | `python scripts/install-universal.py --host hermes --mode preserve` |
+| OpenClaw | `~/.openclaw/skills` | `python scripts/install-universal.py --host openclaw --mode preserve` |
+| 全部宿主 | 多目录 | `python scripts/install-universal.py --host all --mode preserve` |
+
+如果你还没装 Claude Code：
 
 ```bash
 npm install -g @anthropic-ai/claude-code
@@ -29,7 +41,7 @@ npm install -g @anthropic-ai/claude-code
 把下面这段话直接发给 Claude Code：
 
 ```
-帮我安装 vibe coding 工作流配置。从 https://github.com/digibeing1001/claude-vibe-coding-setup 克隆仓库到临时目录，运行安装脚本，把配置部署到 ~/.claude/。装完告诉我有多少个技能可用。
+帮我安装 vibe coding 工作流配置。从 https://github.com/digibeing1001/claude-vibe-coding-setup 克隆仓库到临时目录，先运行 python scripts/validate_setup.py 验证，再用 python scripts/install-universal.py --host claude --mode preserve --install-rules --install-hooks 安装。不要覆盖已有个人 Skill，装完报告新增、跳过、覆盖数量。
 ```
 
 ### 手动安装
@@ -37,11 +49,30 @@ npm install -g @anthropic-ai/claude-code
 ```bash
 git clone https://github.com/digibeing1001/claude-vibe-coding-setup.git
 cd claude-vibe-coding-setup
-./scripts/install.sh  # macOS/Linux
-# 或 .\scripts\install.ps1  # Windows
+python scripts/validate_setup.py
+python scripts/install-universal.py --host codex --mode preserve
+
+# macOS/Linux 包装脚本
+./scripts/install.sh --host claude --mode preserve --install-rules --install-hooks
+
+# Windows 包装脚本
+.\scripts\install.ps1 --host codex --mode preserve
 ```
 
-装完重启 Claude Code 即可生效。
+装完重启对应宿主或开启新会话即可生效。
+
+### 验证安装包
+
+```bash
+python scripts/validate_setup.py
+```
+
+验证器会检查：
+
+- 每个 Skill 是否有标准 `SKILL.md`
+- YAML frontmatter 是否有 `name` 和 `description`
+- 是否存在坏掉的 gitlink/submodule
+- 是否有会导致严格加载器漏掉 Skill 的路径问题
 
 ---
 
@@ -140,9 +171,32 @@ cd claude-vibe-coding-setup
 
 ---
 
-## 152 项技能分类
+## Codex 使用方式
 
-不用记名字，知道有什么能力就行：
+安装到 Codex 后，Codex 会获得 `codex-vibe-coding` 入口 Skill。原则是：
+
+1. **省 token 优先**：先用本地已有 Skill、代码索引、`rg`、局部文件读取；不要一次性加载所有规则。
+2. **质量优先**：功能完成前必须有 fresh verification evidence，不能凭感觉说完成。
+3. **不写屎山代码**：优先小而完整的改动、已有项目模式、测试、review、de-sloppify，不用巨大抽象掩盖不确定性。
+4. **简单循环优先**：bug 默认走 localize → repair → validate，只有任务真的复杂时才升级到多 agent 或长循环。
+
+安装命令：
+
+```bash
+python scripts/install-universal.py --host codex --mode preserve
+```
+
+如果你想同时安装到 Hermes/OpenClaw/Claude：
+
+```bash
+python scripts/install-universal.py --host all --mode preserve
+```
+
+---
+
+## 156 项 Skill 分类
+
+不用记名字，知道有什么能力就行；精确数量以 `python scripts/validate_setup.py` 输出为准。
 
 **需求与规划（11 项）**
 - 深度追问需求、建立项目术语表、拆解任务计划、生成产品需求文档、多步骤工程蓝图
@@ -304,11 +358,13 @@ AI：
 ├── README.md          # 本文件
 ├── AGENT_INSTALL.md   # 给 AI 看的安装指南
 ├── scripts/
-│   ├── install.sh     # 一键安装脚本
-│   └── install.ps1
-├── skills/            # 152 项技能完整源码
+│   ├── install-universal.py  # Claude/Codex/Hermes/OpenClaw 通用安装器
+│   ├── validate_setup.py     # Skill 包验证器
+│   ├── install.sh            # macOS/Linux 包装脚本
+│   └── install.ps1           # Windows 包装脚本
+├── skills/            # 156 项 Skill 源码（以 validate_setup.py 为准）
 ├── hooks/             # 13 个自动化钩子
-└── docs/              # 补充文档
+└── docs/              # 调研、对比与补充文档
 ```
 
 ---

@@ -16,6 +16,25 @@ description: >
 
 This skill coordinates gstack, mattpocock, superpowers, GSD, and ECC skills into a unified pipeline. It eliminates decision fatigue by automatically routing to the right sub-skills at each phase.
 
+## Current Priority
+
+Optimize for **token efficiency and production quality together**:
+
+- Reuse local host skills before loading bundled duplicates.
+- Load only the skills and references needed for the current phase.
+- Prefer deterministic scripts and verification commands over long prose.
+- Keep changes small, cohesive, and aligned with the existing codebase.
+- Add a de-sloppify/review pass before completion to remove overgrown,
+  redundant, or unmaintainable code.
+- Do not claim success without fresh verification evidence.
+
+## Host Adapter
+
+If running in Codex, first apply `codex-vibe-coding` for tool mapping, memory
+rules, and preserve-mode installation expectations. If running in Hermes,
+OpenClaw, Claude Code, Cursor, or another host, translate tool names through the
+host's native capabilities before acting.
+
 ## Auto-Trigger Conditions
 
 Activate this skill when the user:
@@ -34,11 +53,13 @@ Before any work begins, assess the vibe:
 3. **Does this involve UI/UX?** (yes/no → routes to design skills or pure engineering)
 4. **Is this a new project or existing codebase?** (new → gsd-new-project; existing → context-gathering)
 5. **What is the scope?** (trivial/quick task, single feature, multi-phase project)
+6. **What is the cheapest quality loop?** (localize-repair-validate, sequential, RFC DAG, PR loop)
 
 **Decision:**
 - Scope ≤ 15 min → Fast path (Phase 1b)
 - Scope > 15 min + UI involved → Full path with design (Phase 1a → 2 → 3 → 4 → 5)
 - Scope > 15 min + no UI → Engineering path (Phase 1a → 3 → 4 → 5)
+- Bug/regression → Localize → repair → validate before any heavy orchestration
 
 ---
 
@@ -124,6 +145,8 @@ Before any work begins, assess the vibe:
 - RED-GREEN-REFACTOR for all features
 - Atomic commits
 - Context-save checkpoints every 15-30 min
+- If tests or verification fail twice for the same reason, stop and re-plan
+- After implementation, run de-sloppify before final verification
 
 ---
 

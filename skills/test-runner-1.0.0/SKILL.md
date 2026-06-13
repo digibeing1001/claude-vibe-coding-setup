@@ -1,3 +1,8 @@
+---
+name: test-runner-1.0.0
+description: Select, configure, run, and interpret tests across JavaScript, TypeScript, Python, Swift, and Playwright E2E workflows. Use when adding tests, choosing test commands, debugging test failures, checking coverage, or validating a change before completion.
+---
+
 # test-runner
 
 Write and run tests across languages and frameworks.

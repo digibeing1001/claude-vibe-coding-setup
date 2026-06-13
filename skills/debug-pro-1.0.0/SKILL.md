@@ -1,3 +1,8 @@
+---
+name: debug-pro-1.0.0
+description: Systematic debugging protocols and language-specific diagnostic commands. Use when investigating failing tests, runtime errors, regressions, flaky behavior, performance bugs, network issues, or any task that needs reproducible root-cause analysis before fixing code.
+---
+
 # debug-pro
 
 Systematic debugging methodology and language-specific debugging commands.

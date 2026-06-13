@@ -9,9 +9,11 @@
 用户已向你发送了本仓库的 GitHub 链接。你的目标是：
 
 1. **克隆仓库**到临时目录
-2. **安装全部配置**（CLAUDE.md + 167 个 Skill + hooks.json）
-3. **验证安装**并报告可用 Skill 数量
-4. **向用户确认**配置已就绪，可以开始使用
+2. **先验证安装包**（`scripts/validate_setup.py`）
+3. **按宿主安装配置**（Codex / Claude Code / Hermes / OpenClaw）
+4. **默认保留已有同名 Skill**，不要覆盖用户个人规则
+5. **验证安装**并报告新增、跳过、覆盖数量
+6. **向用户确认**配置已就绪，可以开始使用
 
 ---
 
@@ -27,95 +29,57 @@ cd claude-vibe-coding-setup
 
 > 如果用户提供了具体链接，使用用户提供的链接替代上方 URL。
 
-### Step 2: 备份现有配置
+### Step 2: 验证仓库
 
 ```bash
-# 创建备份目录
-mkdir -p ~/.claude/backups/$(date +%Y%m%d_%H%M%S)
-
-# 备份现有 CLAUDE.md（如存在）
-if [ -f ~/.claude/CLAUDE.md ]; then
-    cp ~/.claude/CLAUDE.md ~/.claude/backups/$(date +%Y%m%d_%H%M%S)/
-    echo "已备份现有 CLAUDE.md"
-fi
-
-# 备份现有 skill 列表（如存在）
-if [ -d ~/.claude/skills ]; then
-    ls ~/.claude/skills > ~/.claude/backups/$(date +%Y%m%d_%H%M%S)/skills.list 2>/dev/null || true
-    echo "已备份现有 skill 列表"
-fi
+python scripts/validate_setup.py
 ```
 
-### Step 3: 安装灵魂文档
+如果验证失败，先修复失败项，不要继续安装。
+
+### Step 3: 选择宿主并安装
+
+如果用户没有指定宿主：
+
+- 在 Codex 会话里，默认安装到 Codex。
+- 在 Claude Code 会话里，默认安装到 Claude Code。
+- 如果用户要求通用安装，安装到 `all`。
 
 ```bash
-cp CLAUDE.md ~/.claude/CLAUDE.md
-echo "✓ CLAUDE.md 已安装"
+# Codex：默认保留已有本地 Skill
+python scripts/install-universal.py --host codex --mode preserve
+
+# Claude Code：安装 rules/hooks 时也保留已有文件
+python scripts/install-universal.py --host claude --mode preserve --install-rules --install-hooks
+
+# Hermes / OpenClaw
+python scripts/install-universal.py --host hermes --mode preserve
+python scripts/install-universal.py --host openclaw --mode preserve
+
+# 全部宿主
+python scripts/install-universal.py --host all --mode preserve
 ```
 
-### Step 4: 安装全部 Skill
+只有用户明确要求覆盖时才使用：
 
 ```bash
-mkdir -p ~/.claude/skills
-
-for skill_dir in skills/*/; do
-    skill_name=$(basename "$skill_dir")
-    
-    # 跳过非目录项和 SKILL_REGISTRY.md
-    if [ "$skill_name" = "SKILL_REGISTRY.md" ]; then
-        continue
-    fi
-    
-    cp -r "$skill_dir" ~/.claude/skills/"$skill_name"
-done
-
-echo "✓ $(ls ~/.claude/skills/ | wc -l) 个 Skill 已安装"
+python scripts/install-universal.py --host codex --mode overwrite
 ```
 
-### Step 5: 安装项目级 Hooks（如适用）
+覆盖模式会创建备份目录；报告中必须告诉用户备份路径。
 
-如果当前目录是某个项目的根目录（包含 package.json、.git 等标志）：
+### Step 4: 验证安装结果
 
 ```bash
-if [ -f "package.json" ] || [ -d ".git" ]; then
-    mkdir -p .claude
-    cp hooks.json .claude/hooks.json
-    echo "✓ hooks.json 已安装到项目 .claude/"
-fi
+# Codex
+test -f ~/.codex/skills/vibe-coding/SKILL.md
+test -f ~/.codex/skills/codex-vibe-coding/SKILL.md
+
+# Claude Code
+test -f ~/.claude/skills/vibe-coding/SKILL.md
 ```
 
-### Step 6: 验证安装
-
-```bash
-SKILL_COUNT=$(ls ~/.claude/skills/ | wc -l)
-echo ""
-echo "========================================"
-echo "安装验证"
-echo "========================================"
-echo "Skill 数量: $SKILL_COUNT"
-echo "预期: 167+"
-
-if [ "$SKILL_COUNT" -ge 160 ]; then
-    echo "✓ Skill 安装正常"
-else
-    echo "⚠ Skill 数量不足，请检查"
-fi
-
-# 检查关键 Skill
-for skill in vibe-coding vibe-design-workflow blueprint brainstorming coding-standards; do
-    if [ -d ~/.claude/skills/$skill ]; then
-        echo "✓ $skill"
-    else
-        echo "✗ $skill 缺失"
-    fi
-done
-
-echo ""
-echo "灵魂文档前 3 行:"
-head -3 ~/.claude/CLAUDE.md
-```
-
-### Step 7: 向用户报告
+### Step 5: 向用户报告
 
 向用户发送如下消息：
 
@@ -123,13 +87,15 @@ head -3 ~/.claude/CLAUDE.md
 
 **Vibe Coding 配置安装完成！**
 
-- ✅ 灵魂文档（CLAUDE.md）已注入
-- ✅ 167 个 Skill 已就绪
-- ✅ 八阶段工作流已激活
-- ✅ 质量关卡（Hooks）已配置
+- ✅ 安装包验证已通过
+- ✅ 已安装到目标宿主：<Codex/Claude/Hermes/OpenClaw>
+- ✅ 新增 Skill：<N>
+- ✅ 保留已有同名 Skill：<N>
+- ✅ 覆盖 Skill：<N>（如有）
+- ✅ 备份目录：<path>
 
 **你现在可以：**
-- 说 `vibe coding` 或 `let's build` 启动完整工作流
+- 对 Codex/Claude 说 `vibe coding` 或 `let's build` 启动完整工作流
 - 说 `design this` 启动 UI/UX 设计流程
 - 任何构建/设计/实现请求都会自动路由到对应 Skill
 
@@ -140,7 +106,7 @@ head -3 ~/.claude/CLAUDE.md
 
 ---
 
-## 可选增强（询问用户）
+## 可选增强（询问用户，不要擅自安装）
 
 安装完成后，询问用户是否需要以下增强：
 
@@ -172,7 +138,8 @@ claude /plugin marketplace add rohitg00/awesome-claude-code-toolkit
 
 ## 注意事项
 
-1. **不要覆盖用户的个人 settings.json** —— 只更新 CLAUDE.md 和 skills/
-2. **保留备份** —— 安装前已自动备份
-3. **重启生效** —— 建议用户开启新 Claude Code 会话
-4. **权限** —— 首次使用某些 Skill 可能需要确认权限
+1. **不要覆盖用户的个人 settings.json**
+2. **默认 preserve** —— 不要覆盖已有同名 Skill
+3. **覆盖必须显式** —— 只有用户要求时才 `--mode overwrite`
+4. **重启生效** —— 建议用户开启新宿主会话
+5. **权限** —— 外部发布、定时任务、浏览器/电脑控制、记忆写入都需要明确授权

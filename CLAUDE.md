@@ -2,6 +2,15 @@
 
 > 基于 Andrej Karpathy 哲学：谨慎 > 速度。简单任务自行判断。
 
+## 0. Codex / 多宿主通用规则
+
+- 本配置面向 Claude Code、Codex、Hermes、OpenClaw 等宿主；不要假设只有 Claude 工具名可用。
+- Codex 中优先触发 `codex-vibe-coding` → `vibe-coding`，再按需加载具体 Skill。
+- 第一目标：**节省 token，同时保证生产质量**。用渐进加载、局部文件、代码索引、现有本地 Skill 复用来省 token；用测试、浏览器验证、review 和 fresh evidence 保质量。
+- 默认不要覆盖用户已有同名 Skill。安装/同步使用 `scripts/install-universal.py --mode preserve`。
+- 不写屎山代码：不靠堆抽象、堆文件、堆提示词掩盖不确定性；优先小而清晰的修改、既有项目模式、明确验收和 de-sloppify。
+- Bug 默认先走 `localize → repair → validate`，连续失败再升级为多 Agent/长循环。
+
 ## 1. 先思考，再编码
 
 - 不确定 → 提问。不假设。
@@ -203,6 +212,7 @@
 | 场景 | 主 Skill | 辅助 Skill |
 |------|---------|-----------|
 | **任何创建/构建/设计请求** | `vibe-coding` | — |
+| **Codex 中的 Vibe Coding** | `codex-vibe-coding` | `vibe-coding`, `verification-loop`, `review` |
 | **新项目** | `gsd-new-project` | `brainstorming` |
 | **需求澄清** | `brainstorming` | `product-lens` |
 | **深度对齐（追问）** | `grill-me` | — |
@@ -289,11 +299,11 @@
 
 ---
 
-# 附录：可用 Skill 总览（155 个）
+# 附录：可用 Skill 总览（156 个，以 validate_setup.py 为准）
 
 **Vibe Coding 黄金路径 Skill：**
 `vibe-coding` → `brainstorming`/`gsd-new-project` → `grill-me`/`grill-with-docs`/`ubiquitous-language` → `blueprint`/`writing-plans`/`design-an-interface` → `vibe-design-workflow`/`frontend-design-3-0.1.0`/`design-review` → `tdd-workflow`/`executing-plans` → `verification-loop`/`browser-qa`/`verify` → `review`/`cso`/`security-review` → `gsd-ship`/`deployment-patterns`/`canary-watch` → `document-generate`/`handoff`
 
-**完整列表：** `agent-eval`, `agent-harness-construction`, `agentic-engineering`, `ai-first-engineering`, `ai-regression-testing`, `andrej-karpathy-skills`, `architecture-designer-0.1.0`, `autonomous-agent-harness`, `benchmark`, `blueprint`, `brainstorming`, `browser-qa`, `canary-watch`, `caveman`, `caveman-review`, `code-tour`, `codebase-onboarding`, `coding-standards`, `compress`, `continuous-agent-loop`, `cso`, `debug-pro-1.0.0`, `design-an-interface`, `design-review`, `design-system`, `diagnose`, `dispatching-parallel-agents`, `document-generate`, `e2e-testing`, `error-handling`, `everything-claude-code`, `everything-claude-code-conventions`, `executing-plans`, `finishing-a-development-branch`, `frontend-design-3-0.1.0`, `frontend-design-direction`, `grill-me`, `grill-with-docs`, `gsd-add-tests`–`gsd-workstreams` (67 个 gsd-*), `gstack`, `handoff`, `improve-codebase-architecture`, `investigate`, `make-interfaces-feel-better`, `motion-advanced`, `motion-foundations`, `motion-patterns`, `plan-orchestrate`, `plankton-code-quality`, `product-lens`, `production-audit`, `prototype`, `qa-mattpocock`, `receiving-code-review`, `request-refactor-plan`, `requesting-code-review`, `review`, `rules-distill`, `search-first`, `security-auditor-1.0.0`, `security-review`, `security-scan`, `setup-pre-commit`, `simplify`, `skill-creator-0.1.0`, `subagent-driven-development`, `systematic-debugging`, `tdd-workflow`, `tech-evaluator`, `test-driven-development`, `test-runner-1.0.0`, `to-issues`, `to-prd`, `triage`, `ubiquitous-language`, `ui-design-review`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `verification-loop`, `verify`, `vibe-coding`, `vibe-design-workflow`, `write-a-skill`, `writing-plans`, `writing-skills`, `zoom-out`
+**完整列表：** `agent-eval`, `agent-harness-construction`, `agentic-engineering`, `ai-first-engineering`, `ai-regression-testing`, `andrej-karpathy-skills`, `architecture-designer-0.1.0`, `autonomous-agent-harness`, `benchmark`, `blueprint`, `brainstorming`, `browser-qa`, `canary-watch`, `caveman`, `caveman-review`, `code-tour`, `codebase-onboarding`, `codex-vibe-coding`, `coding-standards`, `compress`, `continuous-agent-loop`, `cso`, `debug-pro-1.0.0`, `deployment-patterns`, `design-an-interface`, `design-review`, `design-system`, `diagnose`, `dispatching-parallel-agents`, `document-generate`, `e2e-testing`, `error-handling`, `everything-claude-code`, `everything-claude-code-conventions`, `executing-plans`, `finishing-a-development-branch`, `frontend-design-3-0.1.0`, `frontend-design-direction`, `grill-me`, `grill-with-docs`, `gsd-add-tests`–`gsd-workstreams` (67 个 gsd-*), `gstack`, `handoff`, `improve-codebase-architecture`, `investigate`, `make-interfaces-feel-better`, `motion-advanced`, `motion-foundations`, `motion-patterns`, `plan-orchestrate`, `plankton-code-quality`, `product-lens`, `production-audit`, `prototype`, `qa-mattpocock`, `receiving-code-review`, `request-refactor-plan`, `requesting-code-review`, `review`, `rules-distill`, `search-first`, `security-auditor-1.0.0`, `security-review`, `security-scan`, `setup-pre-commit`, `simplify`, `skill-creator-0.1.0`, `subagent-driven-development`, `systematic-debugging`, `tdd-workflow`, `tech-evaluator`, `test-driven-development`, `test-runner-1.0.0`, `to-issues`, `to-prd`, `triage`, `ubiquitous-language`, `ui-design-review`, `using-git-worktrees`, `using-superpowers`, `verification-before-completion`, `verification-loop`, `verify`, `vibe-coding`, `vibe-design-workflow`, `write-a-skill`, `writing-plans`, `writing-skills`, `zoom-out`
 
 **整合 Toolkit Plugin：** `code-architect`, `schema-designer`, `ui-designer`, `responsive-designer`, `frontend-developer`, `frontend-excellence`, `code-review-assistant`, `code-guardian`, `code-explainer`, `dead-code-finder`, `security-guidance`, `codebase-documenter`, `onboarding-guide`, `a11y-audit`, `bundle-analyzer`, `regex-builder`, `rag-builder`, `web-dev`, `feature-dev`, `product-shipper`, `pr-reviewer`, `bug-detective`, `e2e-runner`, `test-writer`, `plan`, `discuss`, `deploy-pilot`, `release-manager`, `monitoring-setup`

@@ -1,273 +1,164 @@
 ---
 name: autonomous-agent-harness
-description: Transform Claude Code into a fully autonomous agent system with persistent memory, scheduled operations, computer use, and task queuing. Replaces standalone agent frameworks (Hermes, AutoGPT) by leveraging Claude Code's native crons, dispatch, MCP tools, and memory. Use when the user wants continuous autonomous operation, scheduled tasks, or a self-directing agent loop.
+description: Design and operate portable autonomous coding-agent harnesses across Claude Code, Codex, Hermes, OpenClaw, Cursor, OpenCode, and similar hosts. Use when building scheduled agents, long-running Vibe Coding loops, task queues, memory-backed workflows, multi-agent orchestration, computer/browser automation, or production-grade agent evaluation and recovery systems.
 origin: ECC
 ---
 
 # Autonomous Agent Harness
 
-Turn Claude Code into a persistent, self-directing agent system using only native features and MCP servers.
+Use this skill to turn a coding assistant into a controlled engineering
+harness. The harness must be portable, scoped, observable, and easy to stop.
 
-## Consent and Safety Boundaries
+## First Principles
 
-Autonomous operation must be explicitly requested and scoped by the user. Do not create schedules, dispatch remote agents, write persistent memory, use computer control, post externally, modify third-party resources, or act on private communications unless the user has approved that capability and the target workspace for the current setup.
+1. **Consent first.** Autonomous operation, schedules, external posts, computer
+   control, and memory writes require explicit user approval for the current
+   target.
+2. **Small action space.** Prefer a few reliable actions with clear outputs over
+   many overlapping tools.
+3. **Progressive disclosure.** Keep host rules short. Load skills, references,
+   logs, and code only when they are needed.
+4. **Evidence before claims.** Fresh verification output beats confidence.
+5. **Stop on repeated failure.** Re-plan after the same failure repeats twice.
+6. **No prompt bloat as a quality strategy.** Add deterministic scripts, tests,
+   and checklists before adding more prose.
 
-Prefer dry-run plans and local queue files before enabling recurring or event-driven actions. Keep credentials, private workspace exports, personal datasets, and account-specific automations out of reusable ECC artifacts.
+## Host Capability Detection
 
-## When to Activate
+Before enabling the harness, create a capability table:
 
-- User wants an agent that runs continuously or on a schedule
-- Setting up automated workflows that trigger periodically
-- Building a personal AI assistant that remembers context across sessions
-- User says "run this every day", "check on this regularly", "keep monitoring"
-- Wants to replicate functionality from Hermes, AutoGPT, or similar autonomous agent frameworks
-- Needs computer use combined with scheduled execution
+| Capability | Detect | Fallback |
+| --- | --- | --- |
+| Skills | host skills directory exists | install missing skills with preserve mode |
+| Shell | run a harmless version command | provide manual command |
+| Git | `git status --short` | read-only review mode |
+| Browser/UI QA | Browser plugin or Playwright available | screenshot/manual checklist |
+| Multi-agent | host agent tools available | sequential loop |
+| Memory | explicit memory tool or files | local state file |
+| Scheduling | automation/cron tool available | manual queue |
+| GitHub | connector or `gh auth status` | local patch only |
 
-## Architecture
+Never assume Claude-only tool names on Codex, Hermes, or OpenClaw. Translate
+through the host adapter.
 
-```
-┌──────────────────────────────────────────────────────────────┐
-│                    Claude Code Runtime                        │
-│                                                              │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌─────────────┐ │
-│  │  Crons   │  │ Dispatch │  │ Memory   │  │ Computer    │ │
-│  │ Schedule │  │ Remote   │  │ Store    │  │ Use         │ │
-│  │ Tasks    │  │ Agents   │  │          │  │             │ │
-│  └────┬─────┘  └────┬─────┘  └────┬─────┘  └──────┬──────┘ │
-│       │              │             │                │        │
-│       ▼              ▼             ▼                ▼        │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              ECC Skill + Agent Layer                  │    │
-│  │                                                      │    │
-│  │  skills/     agents/     commands/     hooks/        │    │
-│  └──────────────────────────────────────────────────────┘    │
-│       │              │             │                │        │
-│       ▼              ▼             ▼                ▼        │
-│  ┌──────────────────────────────────────────────────────┐    │
-│  │              MCP Server Layer                        │    │
-│  │                                                      │    │
-│  │  memory    github    exa    supabase    browser-use  │    │
-│  └──────────────────────────────────────────────────────┘    │
-└──────────────────────────────────────────────────────────────┘
-```
+## Portable Directory Contract
 
-## Core Components
+Use these paths when the host has no stronger convention:
 
-### 1. Persistent Memory
-
-Use Claude Code's built-in memory system enhanced with MCP memory server for structured data.
-
-**Built-in memory** (`~/.claude/projects/*/memory/`):
-- User preferences, feedback, project context
-- Stored as markdown files with frontmatter
-- Automatically loaded at session start
-
-**MCP memory server** (structured knowledge graph):
-- Entities, relations, observations
-- Queryable graph structure
-- Cross-session persistence
-
-**Memory patterns:**
-
-```
-# Short-term: current session context
-Use TodoWrite for in-session task tracking
-
-# Medium-term: project memory files
-Write to ~/.claude/projects/*/memory/ for cross-session recall
-
-# Long-term: MCP knowledge graph
-Use mcp__memory__create_entities for permanent structured data
-Use mcp__memory__create_relations for relationship mapping
-Use mcp__memory__add_observations for new facts about known entities
+```text
+.agent/
+  queue.md              # user-approved pending work
+  state.md              # current loop state
+  evidence/             # command outputs, screenshots, reports
+  decisions.md          # stable decisions only
+  logs/                 # append-only run logs
 ```
 
-### 2. Scheduled Operations (Crons)
+For Codex projectless work, use the workspace `work/` folder for temporary
+state and `outputs/` only for user-facing deliverables.
 
-Use Claude Code's scheduled tasks to create recurring agent operations.
+## Task Queue Contract
 
-**Setting up a cron:**
+Each queued task must have:
 
-```
-# Via MCP tool
-mcp__scheduled-tasks__create_scheduled_task({
-  name: "daily-pr-review",
-  schedule: "0 9 * * 1-5",  # 9 AM weekdays
-  prompt: "Review all open PRs in affaan-m/everything-claude-code. For each: check CI status, review changes, flag issues. Post summary to memory.",
-  project_dir: "/path/to/repo"
-})
-
-# Via claude -p (programmatic mode)
-echo "Review open PRs and summarize" | claude -p --project /path/to/repo
-```
-
-**Useful cron patterns:**
-
-| Pattern | Schedule | Use Case |
-|---------|----------|----------|
-| Daily standup | `0 9 * * 1-5` | Review PRs, issues, deploy status |
-| Weekly review | `0 10 * * 1` | Code quality metrics, test coverage |
-| Hourly monitor | `0 * * * *` | Production health, error rate checks |
-| Nightly build | `0 2 * * *` | Run full test suite, security scan |
-| Pre-meeting | `*/30 * * * *` | Prepare context for upcoming meetings |
-
-### 3. Dispatch / Remote Agents
-
-Trigger Claude Code agents remotely for event-driven workflows.
-
-**Dispatch patterns:**
-
-```bash
-# Trigger from CI/CD
-curl -X POST "https://api.anthropic.com/dispatch" \
-  -H "Authorization: Bearer $ANTHROPIC_API_KEY" \
-  -d '{"prompt": "Build failed on main. Diagnose and fix.", "project": "/repo"}'
-
-# Trigger from webhook
-# GitHub webhook → dispatch → Claude agent → fix → PR
-
-# Trigger from another agent
-claude -p "Analyze the output of the security scan and create issues for findings"
+```markdown
+## <task id>
+Status: pending|running|blocked|done
+Owner: host or agent name
+Scope: files, repo, or system boundary
+Acceptance:
+- measurable criterion
+Budget: max iterations/time/failures
+Allowed side effects: local files|git branch|PR|external post|schedule
+Evidence:
+- command or observation required before done
 ```
 
-### 4. Computer Use
+Tasks without acceptance criteria stay in `pending` until clarified.
 
-Leverage Claude's computer-use MCP for physical world interaction.
+## Loop Contract
 
-**Capabilities:**
-- Browser automation (navigate, click, fill forms, screenshot)
-- Desktop control (open apps, type, mouse control)
-- File system operations beyond CLI
+Every autonomous loop must declare:
 
-**Use cases within the harness:**
-- Automated testing of web UIs
-- Form filling and data entry
-- Screenshot-based monitoring
-- Multi-app workflows
+- trigger: manual, schedule, webhook, CI, file watch
+- scope: repo/path/account boundaries
+- allowed tools and side effects
+- budget: iterations, time, failure repeats, token/cost if available
+- verification: command or observation required
+- recovery: what happens on failure
+- stop condition: when it halts and reports
 
-### 5. Task Queue
+If any field is unknown, run a dry-run plan instead of enabling automation.
 
-Manage a persistent queue of tasks that survive session boundaries.
+## Quality Harness
 
-**Implementation:**
+Use a tiered gate instead of a single giant checklist:
 
-```
-# Task persistence via memory
-Write task queue to ~/.claude/projects/*/memory/task-queue.md
+| Tier | Use For | Required Gates |
+| --- | --- | --- |
+| quick | tiny edits | diff review + scoped verification |
+| standard | normal feature | tests + lint/type/build when available + review |
+| high-risk | auth, data, payment, infra, migration | standard + security + rollback plan |
+| UI | frontend/user-facing | standard + browser/screenshot + accessibility |
+| release | PR/deploy | standard/high-risk gates + CI + post-ship monitoring |
 
-# Task format
----
-name: task-queue
-type: project
-description: Persistent task queue for autonomous operation
----
+## Observation Format
 
-## Active Tasks
-- [ ] PR #123: Review and approve if CI green
-- [ ] Monitor deploy: check /health every 30 min for 2 hours
-- [ ] Research: Find 5 leads in AI tooling space
-
-## Completed
-- [x] Daily standup: reviewed 3 PRs, 2 issues
-```
-
-## Replacing Hermes
-
-| Hermes Component | ECC Equivalent | How |
-|------------------|---------------|-----|
-| Gateway/Router | Claude Code dispatch + crons | Scheduled tasks trigger agent sessions |
-| Memory System | Claude memory + MCP memory server | Built-in persistence + knowledge graph |
-| Tool Registry | MCP servers | Dynamically loaded tool providers |
-| Orchestration | ECC skills + agents | Skill definitions direct agent behavior |
-| Computer Use | computer-use MCP | Native browser and desktop control |
-| Context Manager | Session management + memory | ECC 2.0 session lifecycle |
-| Task Queue | Memory-persisted task list | TodoWrite + memory files |
-
-## Setup Guide
-
-### Step 1: Configure MCP Servers
-
-Ensure these are in `~/.claude.json`:
+All deterministic tools and scripts should return:
 
 ```json
 {
-  "mcpServers": {
-    "memory": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/memory-mcp-server"]
-    },
-    "scheduled-tasks": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/scheduled-tasks-mcp-server"]
-    },
-    "computer-use": {
-      "command": "npx",
-      "args": ["-y", "@anthropic/computer-use-mcp-server"]
-    }
-  }
+  "status": "success|warning|error",
+  "summary": "one line",
+  "artifacts": ["paths or URLs"],
+  "next_actions": ["specific follow-up"],
+  "stop_reason": "optional stop condition"
 }
 ```
 
-### Step 2: Create Base Crons
+This makes recovery cheaper than re-reading logs.
 
-```bash
-# Daily morning briefing
-claude -p "Create a scheduled task: every weekday at 9am, review my GitHub notifications, open PRs, and calendar. Write a morning briefing to memory."
+## Memory Rules
 
-# Continuous learning
-claude -p "Create a scheduled task: every Sunday at 8pm, extract patterns from this week's sessions and update the learned skills."
-```
+- Write memory only when the user explicitly asks or a configured workflow has
+  explicit permission.
+- Store durable preferences, decisions, and reusable patterns, not transient
+  logs.
+- Mark imported ad-hoc notes or external research as such.
+- Keep memory short enough to load without crowding task context.
 
-### Step 3: Initialize Memory Graph
+## GitHub And Release Rules
 
-```bash
-# Bootstrap your identity and context
-claude -p "Create memory entities for: me (user profile), my projects, my key contacts. Add observations about current priorities."
-```
+For publish workflows:
 
-### Step 4: Enable Computer Use (Optional)
+1. Verify clean baseline or document existing failures.
+2. Use an isolated branch/worktree when possible.
+3. Commit focused changes.
+4. Push and verify the remote branch/commit exists.
+5. Create or update PR when requested.
+6. Do not claim upload success until remote state is confirmed.
 
-Grant computer-use MCP the necessary permissions for browser and desktop control.
+## Missing Pieces To Watch For
 
-## Example Workflows
+These gaps usually prevent production-grade Vibe Coding:
 
-### Autonomous PR Reviewer
-```
-Cron: every 30 min during work hours
-1. Check for new PRs on watched repos
-2. For each new PR:
-   - Pull branch locally
-   - Run tests
-   - Review changes with code-reviewer agent
-   - Post review comments via GitHub MCP
-3. Update memory with review status
-```
+- no standard skill validation before install
+- broken gitlinks or missing `SKILL.md`
+- install scripts that silently overwrite personal host rules
+- no host adapter for Codex/Hermes/OpenClaw
+- no loop budgets or stop conditions
+- no de-sloppify/review pass after implementation
+- no fresh verification evidence before completion
+- no state file for long loops
+- no security path for secrets, auth, payments, migrations, or external writes
 
-### Personal Research Agent
-```
-Cron: daily at 6 AM
-1. Check saved search queries in memory
-2. Run Exa searches for each query
-3. Summarize new findings
-4. Compare against yesterday's results
-5. Write digest to memory
-6. Flag high-priority items for morning review
-```
+## Setup Checklist
 
-### Meeting Prep Agent
-```
-Trigger: 30 min before each calendar event
-1. Read calendar event details
-2. Search memory for context on attendees
-3. Pull recent email/Slack threads with attendees
-4. Prepare talking points and agenda suggestions
-5. Write prep doc to memory
-```
-
-## Constraints
-
-- Cron tasks run in isolated sessions — they don't share context with interactive sessions unless through memory.
-- Computer use requires explicit permission grants. Don't assume access.
-- Remote dispatch may have rate limits. Design crons with appropriate intervals.
-- Memory files should be kept concise. Archive old data rather than letting files grow unbounded.
-- Always verify that scheduled tasks completed successfully. Add error handling to cron prompts.
+1. Run `scripts/validate_setup.py`.
+2. Install into the target host with `scripts/install-universal.py --mode preserve`.
+3. Confirm the host can discover `vibe-coding` and `codex-vibe-coding` when
+   applicable.
+4. Run a dry-run task with no external side effects.
+5. Run one small real task and capture evidence.
+6. Review token overhead and remove duplicated skills where local versions are
+   better.
