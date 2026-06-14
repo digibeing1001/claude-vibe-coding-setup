@@ -4,13 +4,27 @@ Generated: 2026-06-14
 
 ## Summary
 
-The original repository was a useful Claude Code workflow bundle. The improved
-version turns it into a portable Vibe Coding harness for Claude Code, Codex,
-Hermes, OpenClaw, and similar hosts.
+The original repository was a Claude Code workflow bundle. The improved version
+is a portable Vibe Coding harness for Codex, Claude Code, Hermes, OpenClaw, and
+similar hosts.
+
+## Comparison
+
+| Area | Original | Improved |
+| --- | --- | --- |
+| Host support | Claude Code oriented | Codex, Claude Code, Hermes, OpenClaw installers |
+| Install behavior | Broad copy/overwrite | Preserve by default; targeted `--only` overwrite |
+| Skill discovery | Some lowercase `skill.md`; broken `gstack` gitlink | Strict `SKILL.md`; gitlink replaced; validator added |
+| Harness | Prompt-heavy workflow | Host adapter, state/evidence contracts, loop budgets |
+| Bug loop | Broad autonomous guidance | localize -> repair -> validate before orchestration |
+| Completion | Manual review expectation | `score_vibe_run.py` runtime score gate |
+| Capability gaps | User had to ask or agent improvised | Phase 0 sensor plus findskill-compatible discovery |
+| External skills | Not tracked | Candidate registry plus GitHub/ClawHub/Skills CLI discovery |
+| Publish | Local-only install story | Commit/push verification and host-ready install path |
 
 ## Test Results
 
-Validated on Windows PowerShell in this repository:
+Baseline validation after the first iteration:
 
 ```text
 python scripts/validate_setup.py
@@ -20,86 +34,91 @@ Warnings: 0
 Errors: 0
 ```
 
-Codex install dry run:
-
-```text
-python scripts/install-universal.py --host codex --mode preserve --dry-run
-installed=133 skipped=23 overwritten=0
-```
-
-Codex real install:
+Codex install after the first iteration:
 
 ```text
 python scripts/install-universal.py --host codex --mode preserve
 installed=133 skipped=23 overwritten=0
 ```
 
-Post-install discovery checks passed for:
+This second iteration adds:
 
-- `~/.codex/skills/codex-vibe-coding/SKILL.md`
-- `~/.codex/skills/vibe-coding/SKILL.md`
-- `~/.codex/skills/continuous-agent-loop/SKILL.md`
+- `scripts/score_vibe_run.py`
+- `scripts/find_skill_candidates.py`
+- `skills/vibe-run-review`
+- `config/skill-candidates.json`
+- `docs/EXTERNAL_SKILL_CANDIDATES.md`
+- targeted installer updates via `--only`
 
-Codex skill directory after install: 190 skill directories.
+Second iteration verification:
 
-## Comparison
+```text
+python -m py_compile scripts\install-universal.py scripts\validate_setup.py scripts\score_vibe_run.py scripts\find_skill_candidates.py
+exit code: 0
 
-| Area | Original | Improved |
-| --- | --- | --- |
-| Host support | Claude Code only | `install-universal.py` supports Codex, Claude, Hermes, OpenClaw |
-| Install safety | Copy/overwrite behavior | `preserve` by default; `overwrite` requires explicit flag and creates backups |
-| Main entrypoints | Some key skills stored as lowercase `skill.md` | Standard `SKILL.md` paths for strict discovery |
-| Broken dependency | `skills/gstack` gitlink without `.gitmodules` | Real `gstack` compatibility shim |
-| Skill validity | Missing frontmatter in some skills | Frontmatter added and validator catches regressions |
-| Loop behavior | Broad autonomous guidance | Budgets, stop conditions, localize-repair-validate, de-sloppify, recovery |
-| Harness behavior | Claude-specific crons/memory/tools | Portable capability detection and host adapter rules |
-| Token discipline | Implied by some skills | Explicit priority: progressive disclosure, local reuse, minimal context |
-| Verification | Manual expectation | `scripts/validate_setup.py` plus fresh evidence rules |
-| Codex usage | Not directly configured | New `codex-vibe-coding` skill and Codex install path |
+python scripts\validate_setup.py
+Skills: 157
+OK: 157
+Warnings: 0
+Errors: 0
+Notices: 113
 
-## Concrete Before/After Findings
+python scripts\find_skill_candidates.py --capability security --query "claude code security skill" --limit 3 --min-stars 50 --timeout 10 --markdown
+exit code: 0
+Local registry candidates included BehiSecc/VibeSec-Skill and trailofbits/skills.
+GitHub live search returned high-star security skill candidates.
 
-Before:
+python scripts\score_vibe_run.py --required testing,review,security,browser-qa,findskill --live-skill-search --search-limit 2 --markdown
+Status: review
+Total: 73/100
+Capability coverage: 20/20
+Maintainability: 20/20
 
-- `skills/vibe-coding/skill.md` and `skills/vibe-design-workflow/skill.md`
-  used lowercase filenames.
-- `skills/gstack` was a `160000` gitlink, but `.gitmodules` was missing.
-- `skills/debug-pro-1.0.0/SKILL.md` and
-  `skills/test-runner-1.0.0/SKILL.md` started with headings instead of YAML
-  frontmatter.
-- README described a Claude-only install path.
+python scripts\score_vibe_run.py --required testing,review,security,browser-qa,findskill --live-skill-search --search-limit 2 --evidence docs\COMPARISON.md --markdown
+Status: pass
+Total: 90/100
+Diff: git diff --numstat HEAD + untracked
+Verification evidence: 25/25
+Capability coverage: 20/20
+Maintainability: 20/20
 
-After:
+python scripts\install-universal.py --host codex --mode overwrite --only codex-vibe-coding --only vibe-coding --only vibe-run-review --only continuous-agent-loop --dry-run
+installed=1 skipped=0 overwritten=3
+files: tool:installed, tool:installed, tool:installed, tool:installed, config:installed
 
-- strict `SKILL.md` entrypoints exist
-- no validation errors or warnings
-- `gstack` is a real compatibility shim
-- Codex install uses preserve mode and keeps existing local skills
-- loop and harness guidance now include budgets, stop conditions, recovery, and
-  token discipline
+python scripts\install-universal.py --host codex --mode overwrite --only codex-vibe-coding --only vibe-coding --only vibe-run-review --only continuous-agent-loop
+installed=1 skipped=0 overwritten=3
+files: tool:installed, tool:installed, tool:installed, tool:installed, config:installed
 
-## Tradeoffs
+python $HOME\.codex\vibe-coding\scripts\score_vibe_run.py --root . --skills-dir $HOME\.codex\skills --required testing,review,security,browser-qa,findskill --evidence docs\COMPARISON.md --markdown
+Status: pass
+Total: 92/100
 
-Original strengths:
+python $HOME\.codex\vibe-coding\scripts\find_skill_candidates.py --root . --capability findskill --query "OpenClaw findskill skill registry" --limit 3 --min-stars 50 --timeout 10 --markdown
+exit code: 0
+Local registry candidates included openclaw/clawhub and vercel-labs/skills.
+```
 
-- Large skill surface already collected.
-- Easy Claude Code mental model.
-- Strong product/design/engineering ambition.
+The first score run intentionally had no evidence file, so it stayed at review.
+The completion score passes once the verification evidence is supplied.
 
-Improved strengths:
+## Improvement From Iteration
 
-- Safer install behavior.
-- Works across more hosts.
-- Easier to validate before publishing.
-- Better token economics.
-- Lower risk of unbounded agent loops.
-- More explicit path from research to production quality gates.
+The first iteration made the bundle installable and valid. The second iteration
+turns quality and external-skill discovery into executable checks:
 
-Remaining tradeoffs:
+- capability needs are inferred from the task/diff
+- missing capability coverage creates a candidate search path
+- live discovery can call GitHub, the Skills CLI, ClawHub, or standalone
+  findskill tools when available
+- external imports stop at a user-approval boundary
+- Codex can update only the changed entrypoint skills without overwriting the
+  whole local skill directory
 
-- The bundle is still large; future work should prune duplicate skills after
-  observing real Codex usage.
-- External high-star skill repositories were not vendored directly; they should
-  be evaluated one by one before import.
-- Hooks are still Claude-shaped. Cross-host hook installation needs separate
-  host-specific adapters once Hermes/OpenClaw hook formats are confirmed.
+## Remaining Tradeoffs
+
+- Live GitHub search can be rate limited without authentication.
+- `npx skills find` and `npx clawhub search` are optional runtime tools; the
+  script degrades to GitHub search and local registry if they are unavailable.
+- Candidate quality still requires review. Stars and install counts are useful
+  signals, not trust guarantees.

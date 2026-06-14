@@ -1,6 +1,6 @@
 ---
 name: continuous-agent-loop
-description: Production patterns for continuous autonomous coding-agent loops with explicit scope, token and cost budgets, verification gates, failure recovery, CI/PR controls, and stop conditions. Use when running iterative Vibe Coding, long-horizon implementation, autonomous repair, multi-agent coding, or any loop that must avoid churn and produce production-quality code.
+description: Production patterns for continuous autonomous coding-agent loops with explicit scope, context and cost budgets, verification gates, failure recovery, CI/PR controls, and stop conditions. Use when running iterative Vibe Coding, long-horizon implementation, autonomous repair, multi-agent coding, or any loop that must avoid churn.
 origin: ECC
 ---
 
@@ -13,7 +13,7 @@ fresh verification evidence**.
 ## Non-Negotiables
 
 1. Set a stop condition before the loop starts: max iterations, max time, max
-   failures, max token/cost budget, or explicit acceptance criteria.
+   failures, max context/cost budget, or explicit acceptance criteria.
 2. Keep the working set small. Load only the relevant plan, files, diffs, test
    output, and skill references for the current iteration.
 3. Use the simple path first: localize -> patch -> validate. Escalate to
@@ -124,7 +124,7 @@ Set budgets at loop start:
 | Failure repeats | 2 | same root cause appears again |
 | Time | task-dependent | verification cannot run within budget |
 | Context | minimal | unrelated files or old logs dominate context |
-| Cost/tokens | conservative | extra agent would not reduce risk |
+| Cost/context | conservative | extra agent would not reduce risk |
 
 ## State File
 

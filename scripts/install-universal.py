@@ -74,9 +74,11 @@ def exact_child(directory: Path, name: str) -> Path | None:
     return None
 
 
-def iter_skill_dirs(source: Path) -> Iterable[Path]:
+def iter_skill_dirs(source: Path, only: set[str] | None = None) -> Iterable[Path]:
     skills_dir = source / "skills"
     for child in sorted(skills_dir.iterdir(), key=lambda p: p.name.lower()):
+        if only is not None and child.name not in only:
+            continue
         if child.is_dir() and exact_child(child, "SKILL.md"):
             yield child
 
@@ -144,18 +146,24 @@ def install_host(
     mode: str,
     install_rules: bool,
     install_hooks: bool,
+    install_tools: bool,
     dry_run: bool,
+    only: set[str] | None,
 ) -> dict[str, object]:
     stamp = dt.datetime.now().strftime("%Y%m%d_%H%M%S")
     backup_dir = profile.base_dir / "backups" / f"vibe-coding-setup-{stamp}"
     counts = {"installed": 0, "skipped": 0, "overwritten": 0}
     details: list[dict[str, str]] = []
 
-    for skill_dir in iter_skill_dirs(source):
+    installed_names: set[str] = set()
+    for skill_dir in iter_skill_dirs(source, only=only):
+        installed_names.add(skill_dir.name)
         target = profile.skills_dir / skill_dir.name
         status = copy_dir(skill_dir, target, backup_dir, mode, dry_run)
         counts[status] += 1
         details.append({"kind": "skill", "name": skill_dir.name, "status": status})
+
+    missing_only = sorted((only or set()) - installed_names)
 
     files: list[tuple[str, Path, Path | None]] = []
     if install_rules and profile.rules_file:
@@ -166,6 +174,24 @@ def install_host(
         for hook in sorted(hooks_source.glob("*")):
             if hook.is_file():
                 files.append(("hook", hook, profile.hooks_dir / hook.name))
+
+    if install_tools:
+        tools_dir = profile.base_dir / "vibe-coding" / "scripts"
+        config_dir = profile.base_dir / "vibe-coding" / "config"
+        for name in [
+            "install-universal.py",
+            "validate_setup.py",
+            "score_vibe_run.py",
+            "find_skill_candidates.py",
+        ]:
+            files.append(("tool", source / "scripts" / name, tools_dir / name))
+        files.append(
+            (
+                "config",
+                source / "config" / "skill-candidates.json",
+                config_dir / "skill-candidates.json",
+            )
+        )
 
     file_details = []
     for kind, src, target in files:
@@ -183,6 +209,7 @@ def install_host(
         "backup_dir": str(backup_dir),
         "skill_counts": counts,
         "skills": details,
+        "missing_only": missing_only,
         "files": file_details,
     }
 
@@ -201,6 +228,18 @@ def main(argv: list[str]) -> int:
     parser.add_argument("--mode", choices=["preserve", "overwrite"], default="preserve")
     parser.add_argument("--install-rules", action="store_true")
     parser.add_argument("--install-hooks", action="store_true")
+    parser.add_argument(
+        "--no-install-tools",
+        action="store_false",
+        dest="install_tools",
+        default=True,
+        help="Do not install runtime scripts/config into the host vibe-coding directory.",
+    )
+    parser.add_argument(
+        "--only",
+        action="append",
+        help="Install only this skill directory. Repeatable.",
+    )
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--json", action="store_true")
     args = parser.parse_args(argv)
@@ -213,6 +252,7 @@ def main(argv: list[str]) -> int:
         else:
             hosts.append(item)
     hosts = list(dict.fromkeys(hosts))
+    only = set(args.only) if args.only else None
 
     reports = [
         install_host(
@@ -221,7 +261,9 @@ def main(argv: list[str]) -> int:
             args.mode,
             args.install_rules,
             args.install_hooks,
+            args.install_tools,
             args.dry_run,
+            only,
         )
         for name in hosts
     ]
@@ -245,6 +287,8 @@ def main(argv: list[str]) -> int:
                     f"{item['kind']}:{item['status']}" for item in report["files"]
                 )
                 print(f"  files: {file_summary}")
+            if report["missing_only"]:
+                print(f"  missing requested skills: {', '.join(report['missing_only'])}")
             print(f"  backup: {report['backup_dir']}")
         print()
         print("Use --mode overwrite only after reviewing the backup path above.")

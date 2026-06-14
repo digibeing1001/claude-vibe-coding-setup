@@ -1,0 +1,88 @@
+{
+  "candidates": [
+    {
+      "capability": "skill-packaging",
+      "repo": "anthropics/skills",
+      "url": "https://github.com/anthropics/skills",
+      "why": "Canonical public Agent Skills examples and packaging patterns.",
+      "intake": "Reference first; import only small patterns that pass local validation."
+    },
+    {
+      "capability": "findskill",
+      "repo": "openclaw/clawhub",
+      "url": "https://github.com/openclaw/clawhub",
+      "why": "OpenClaw public skill and plugin registry with search, stars, comments, pinning, and CLI flows.",
+      "intake": "Use as a live discovery source during capability gaps; inspect before installing."
+    },
+    {
+      "capability": "findskill",
+      "repo": "vercel-labs/skills",
+      "url": "https://github.com/vercel-labs/skills",
+      "why": "Cross-agent Skills CLI supporting Codex, Claude Code, OpenClaw, Hermes-style paths, search, list, use, add, and update.",
+      "intake": "Use `npx skills find` for discovery and `npx skills add --list` for inspection; install only after approval."
+    },
+    {
+      "capability": "skill-discovery",
+      "repo": "hesreallyhim/awesome-claude-code",
+      "url": "https://github.com/hesreallyhim/awesome-claude-code",
+      "why": "Curated index for Claude Code skills, hooks, commands, MCP servers, and workflows.",
+      "intake": "Use as a search index when a runtime capability gap appears."
+    },
+    {
+      "capability": "skill-discovery",
+      "repo": "rohitg00/awesome-claude-code-toolkit",
+      "url": "https://github.com/rohitg00/awesome-claude-code-toolkit",
+      "why": "Broad toolkit layout with skills, commands, hooks, agents, MCP configs, and plugins.",
+      "intake": "Evaluate individual skills; do not install the whole bundle blindly."
+    },
+    {
+      "capability": "review",
+      "repo": "addyosmani/agent-skills",
+      "url": "https://github.com/addyosmani/agent-skills",
+      "why": "Production engineering oriented skill examples for code review, testing, frontend, and web quality.",
+      "intake": "Compare against existing local review skills before import."
+    },
+    {
+      "capability": "security",
+      "repo": "BehiSecc/VibeSec-Skill",
+      "url": "https://github.com/BehiSecc/VibeSec-Skill",
+      "why": "Security-focused vibe coding skill candidate for threat modeling and secure implementation review.",
+      "intake": "Use for security gaps after checking license, freshness, and overlap with local security skills."
+    },
+    {
+      "capability": "security",
+      "repo": "trailofbits/skills",
+      "url": "https://github.com/trailofbits/skills",
+      "why": "Security research and vulnerability detection skills from Trail of Bits.",
+      "intake": "Strong security candidate; verify license fit and import narrowly for audit workflows."
+    },
+    {
+      "capability": "git-safety",
+      "repo": "kenryu42/cc-safety-net",
+      "url": "https://github.com/kenryu42/cc-safety-net",
+      "why": "Safety hook pattern for dangerous command interception in Claude-style environments.",
+      "intake": "Adapt host-specific hooks only after confirming target host hook semantics."
+    },
+    {
+      "capability": "multi-host-skills",
+      "repo": "refly-ai/refly",
+      "url": "https://github.com/refly-ai/refly",
+      "why": "Treats skills as reusable infrastructure across multiple agent hosts.",
+      "intake": "Reference for multi-host packaging and skill lifecycle patterns."
+    },
+    {
+      "capability": "spec-memory",
+      "repo": "withkynam/vibecode-pro-max-kit",
+      "url": "https://github.com/withkynam/vibecode-pro-max-kit",
+      "why": "Spec and memory oriented vibe coding kit candidate.",
+      "intake": "Evaluate only if current local planning and memory skills do not cover the workflow."
+    },
+    {
+      "capability": "skill-library",
+      "repo": "ComposioHQ/awesome-claude-skills",
+      "url": "https://github.com/ComposioHQ/awesome-claude-skills",
+      "why": "Large skill catalog useful for discovery across specialized tasks.",
+      "intake": "Use as a catalog; import narrowly after user approval."
+    }
+  ]
+}

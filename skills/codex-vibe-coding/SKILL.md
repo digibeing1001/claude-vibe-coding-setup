@@ -1,21 +1,55 @@
 ---
 name: codex-vibe-coding
-description: Codex-specific entrypoint for this portable Vibe Coding setup. Use when the user asks Codex to build, implement, design, refactor, debug, review, or ship code with Vibe Coding, especially when token savings and production quality are both required.
+description: Codex-specific entrypoint for this portable Vibe Coding setup. Use when Codex builds, implements, designs, refactors, debugs, reviews, or ships code with the portable Vibe Coding harness.
 ---
 
 # Codex Vibe Coding
 
 Use this as the Codex host adapter for `vibe-coding`.
 
-## Priorities
+## Runtime Behavior
 
-1. Save tokens by using progressive disclosure, focused file reads, codegraph or
-   indexed search when available, and existing local skills before bundled
-   duplicates.
-2. Protect quality with tests, browser verification, review, and fresh evidence
-   before completion claims.
-3. Avoid unmaintainable code. Prefer small cohesive changes, existing patterns,
-   and de-sloppify passes over broad rewrites.
+1. Map host tools before acting: `update_plan`, shell, Browser, GitHub, memory,
+   codegraph, and local file access.
+2. Load task-relevant files and skills only; prefer indexed search or `rg`
+   before broad reads.
+3. Reuse existing local skills when they are stronger or newer than bundled
+   copies.
+4. For bugs, run `continuous-agent-loop` with localize -> repair -> validate.
+5. For features, keep a coherent implementation slice and run scoped
+   verification before review.
+6. Before completion, run `vibe-run-review` or:
+
+```bash
+python scripts/score_vibe_run.py --live-skill-search --markdown
+```
+
+If this repository is not present in the current workspace, use:
+
+```bash
+python ~/.codex/vibe-coding/scripts/score_vibe_run.py --skills-dir ~/.codex/skills --live-skill-search --markdown
+```
+
+## Capability Sensor
+
+If the task needs a capability that is not covered by local skills:
+
+1. Run live discovery:
+
+```bash
+python scripts/find_skill_candidates.py --capability <capability> --include-cli --markdown
+```
+
+Installed Codex fallback:
+
+```bash
+python ~/.codex/vibe-coding/scripts/find_skill_candidates.py --capability <capability> --include-cli --markdown
+```
+
+2. Use the output to propose GitHub/ClawHub/Skills CLI candidates.
+3. Explain why the candidate should be added and what it would change.
+4. Wait for user approval before importing, installing, or overwriting any
+   external skill code.
 
 ## Codex Tool Mapping
 
@@ -28,18 +62,6 @@ Use this as the Codex host adapter for `vibe-coding`.
 | GitHub publish | Use local `git`/`gh` or the GitHub app, then verify remote state |
 | Memory update | Only write memory when the user explicitly asks |
 
-## Workflow
-
-1. Trigger `vibe-coding` for build/design/implementation requests.
-2. Load only the task-relevant supporting skills.
-3. For bugs, use `continuous-agent-loop` localize-repair-validate before
-   escalating to heavy orchestration.
-4. For feature work, use `tdd-workflow`, `coding-standards`, and
-   `verification-loop`.
-5. For UI work, use `vibe-design-workflow` and browser verification.
-6. For completion, use `verification-before-completion`: evidence before
-   claims.
-
 ## Installation Expectations
 
 Install with:
@@ -48,5 +70,8 @@ Install with:
 python scripts/install-universal.py --host codex --mode preserve
 ```
 
-`preserve` is the default because the user's local Codex skills may contain
-newer or personal rules. Use `--mode overwrite` only after reviewing backups.
+Use targeted overwrite for known updates:
+
+```bash
+python scripts/install-universal.py --host codex --mode overwrite --only codex-vibe-coding
+```

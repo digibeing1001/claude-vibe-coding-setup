@@ -1,383 +1,134 @@
-# Claude Code 生产级 Vibe Coding 配置
+# Portable Vibe Coding Setup
 
-> 一套让 Claude Code 从"代码补全工具"变成"全栈工程搭档"的配置。适合需要稳定交付生产级项目的团队。
+This repository packages a portable coding-agent workflow for Claude Code,
+Codex, Hermes, OpenClaw, and similar hosts.
 
----
+The setup is intentionally built around mechanisms:
 
-## 一句话说明
+- host-aware installation with preserve-by-default behavior
+- strict `SKILL.md` discovery validation
+- scoped context loading through on-demand skills
+- localize -> repair -> validate as the default bug loop
+- runtime scoring before completion
+- proactive findskill-compatible discovery when a capability gap appears
 
-装了这个配置后，你对 Claude Code 说"帮我做个后台管理系统"，它会自动走完一整套工程流程——先问清楚你要什么，再出设计方案，再写代码，再测试，再检查，最后发布。而不是一上来就直接写代码，写完才发现理解错了。
-
-**2026-06-14 迭代重点：** 这套配置已经从 Claude Code 专用包升级为通用 Vibe Coding Harness，安装目标覆盖 Claude Code、Codex、Hermes、OpenClaw。默认安装模式是 `preserve`，会优先复用你本地已有的同名 Skill，避免覆盖个人规则；只有显式传 `--mode overwrite` 才会覆盖，并且会先备份。
-
----
-
-## 先选择宿主
-
-你可以把它安装到不同 coding agent 宿主：
-
-| 宿主 | 默认 Skill 目录 | 安装命令 |
-|------|----------------|----------|
-| Codex | `~/.codex/skills` | `python scripts/install-universal.py --host codex --mode preserve` |
-| Claude Code | `~/.claude/skills` | `python scripts/install-universal.py --host claude --mode preserve --install-rules --install-hooks` |
-| Hermes | `~/.hermes/skills` | `python scripts/install-universal.py --host hermes --mode preserve` |
-| OpenClaw | `~/.openclaw/skills` | `python scripts/install-universal.py --host openclaw --mode preserve` |
-| 全部宿主 | 多目录 | `python scripts/install-universal.py --host all --mode preserve` |
-
-如果你还没装 Claude Code：
-
-```bash
-npm install -g @anthropic-ai/claude-code
-```
-
-装完运行 `claude` 按提示登录即可。
-
----
-
-## 一键安装本配置
-
-### 最简单的方式：让 Claude 自己装
-
-把下面这段话直接发给 Claude Code：
-
-```
-帮我安装 vibe coding 工作流配置。从 https://github.com/digibeing1001/claude-vibe-coding-setup 克隆仓库到临时目录，先运行 python scripts/validate_setup.py 验证，再用 python scripts/install-universal.py --host claude --mode preserve --install-rules --install-hooks 安装。不要覆盖已有个人 Skill，装完报告新增、跳过、覆盖数量。
-```
-
-### 手动安装
+## Install
 
 ```bash
 git clone https://github.com/digibeing1001/claude-vibe-coding-setup.git
 cd claude-vibe-coding-setup
 python scripts/validate_setup.py
 python scripts/install-universal.py --host codex --mode preserve
-
-# macOS/Linux 包装脚本
-./scripts/install.sh --host claude --mode preserve --install-rules --install-hooks
-
-# Windows 包装脚本
-.\scripts\install.ps1 --host codex --mode preserve
 ```
 
-装完重启对应宿主或开启新会话即可生效。
+Supported hosts:
 
-### 验证安装包
+| Host | Skill directory | Command |
+| --- | --- | --- |
+| Codex | `~/.codex/skills` | `python scripts/install-universal.py --host codex --mode preserve` |
+| Claude Code | `~/.claude/skills` | `python scripts/install-universal.py --host claude --mode preserve --install-rules --install-hooks` |
+| Hermes | `~/.hermes/skills` | `python scripts/install-universal.py --host hermes --mode preserve` |
+| OpenClaw | `~/.openclaw/skills` | `python scripts/install-universal.py --host openclaw --mode preserve` |
+| All | multiple | `python scripts/install-universal.py --host all --mode preserve` |
+
+Use `--mode overwrite` only after reviewing what will be replaced. Backups are
+created under the target host directory.
+
+To update only selected skills:
+
+```bash
+python scripts/install-universal.py --host codex --mode overwrite --only codex-vibe-coding --only vibe-coding --only vibe-run-review
+```
+
+## Validate
 
 ```bash
 python scripts/validate_setup.py
+python scripts/score_vibe_run.py --required testing,review,agent-harness --live-skill-search --markdown
 ```
 
-验证器会检查：
+`validate_setup.py` checks packaging correctness:
 
-- 每个 Skill 是否有标准 `SKILL.md`
-- YAML frontmatter 是否有 `name` 和 `description`
-- 是否存在坏掉的 gitlink/submodule
-- 是否有会导致严格加载器漏掉 Skill 的路径问题
+- every bundled skill has a strict `SKILL.md`
+- frontmatter includes `name` and `description`
+- missing or broken gitlinks are reported
+- non-standard skill paths are caught before install
 
----
+`score_vibe_run.py` checks the current run:
 
-## 这套配置能帮你做什么
+- change containment
+- verification evidence
+- required capability coverage
+- maintainability signals
+- context-surface discipline
+- external skill candidates for missing capabilities
 
-### 1. 想清楚了再动手
-
-**问题：** 你说"做个登录页面"，AI 直接开写，写完发现理解错了——原来你要的是手机号+验证码，它做成了用户名+密码。
-
-**解决：** 配置内置了"深度对齐"能力。你说需求后，AI 会像面试官一样追问你：用户是谁？什么场景用？有没有特殊要求？直到双方理解完全一致才动手。
-
-**用到的地方：**
-- **追问模式** —— 针对复杂需求，逐层剥开细节
-- **共享语言** —— 建立项目的"术语表"，比如你们团队把"用户下单"叫"成单"，AI 后续都会用"成单"这个词，不会混用
-
-### 2. 设计不是随便画画
-
-**问题：** AI 生成的界面千篇一律——紫色渐变、圆角卡片、Inter 字体，一看就是 AI 做的。
-
-**解决：** 配置内置了设计规范，要求每个界面必须有明确的设计意图：
-- 选什么字体、颜色、布局，必须能说清楚为什么
-- 动效只能用特定的性能安全方式，不能卡顿
-- 必须考虑无障碍（键盘能用、屏幕阅读器能读、对比度够）
-
-**输出标准：** 设计评分低于 7.5 分（满分 10 分）不能进入开发阶段。
-
-### 3. 改代码前先看影响范围
-
-**问题：** 你让 AI 改一个函数，它改了，但不知道这个函数被 20 个地方调用，改完一堆地方报错。
-
-**解决：** 如果装了 CodeGraph（可选），AI 改代码前会自动查：这个函数被谁调用了？改了会影响哪些地方？然后给你一份影响报告，你确认后再动手。
-
-### 4. 代码质量自动把关
-
-**问题：** AI 写的代码能跑，但命名混乱、有死代码、没处理错误情况。
-
-**解决：** 配置内置了多层自动检查：
-
-| 检查项 | 什么意思 | 什么时候做 |
-|--------|---------|-----------|
-| **类型检查** | 确保变量类型没错 | 每次保存 |
-| **格式检查** | 代码排版统一 | 每次保存 |
-| **烟雾测试** | 每个功能至少 3 个测试用例 | 每做完一个模块 |
-| **复杂度检查** | 单个函数不超过 15 层逻辑 | 持续 |
-| **死代码检查** | 删掉用不到的代码 | 持续 |
-| **安全检查** | 没有硬编码密码、SQL 注入风险等 | 发布前 |
-| **无障碍检查** | 界面对残障人士友好 | 发布前 |
-
-**关键规则：** 3 个以上测试失败 = 这个模块需要重新设计，而不是修修补补。
-
-### 5. 多人视角审查
-
-**问题：** AI 自己检查自己的代码，容易漏掉问题。
-
-**解决：** 配置要求从多个"角色"视角审查代码：
-- **CEO 视角** —— 这功能符合业务目标吗？有没有做多余的东西？
-- **架构师视角** —— 代码结构合理吗？会不会留下技术债？
-- **开发者体验视角** —— 新人接手这个项目容易上手吗？
-- **测试视角** —— 边缘情况考虑了吗？异常处理了吗？
-- **安全官视角** —— OWASP Top 10 有漏洞吗？STRIDE 威胁建模过了吗？
-- **设计师视角** —— 视觉一致性对吗？有 AI slop 吗？
-
-### 6. 发布有监控
-
-**问题：** 代码上线了，出问题不知道。
-
-**解决：** 发布后自动监控 5 分钟核心指标，有异常立即报告。
-
----
-
-## 完整工作流程（8 个阶段）
-
-```
-你说"做个功能"
-    ↓
-【感知】AI 读项目文档，理解现状
-    ↓
-【对齐】AI 追问你需求，建立统一术语
-    ↓
-【规划】AI 拆解任务，出执行计划
-    ↓
-【设计】UI 项目出设计稿，评分 ≥ 7.5
-    ↓
-【开发】写代码 + 测试，每 3 个模块检查一次
-    ↓
-【验证】跑测试 + 浏览器验证 + 格式检查
-    ↓
-【审查】多角色视角代码审查
-    ↓
-【发布】PR → CI → 部署 → 监控
-    ↓
-【反思】总结经验，写入记忆
-```
-
-**小任务（15 分钟内）走捷径**，直接快速完成，不走完整流程。
-
----
-
-## Codex 使用方式
-
-安装到 Codex 后，Codex 会获得 `codex-vibe-coding` 入口 Skill。原则是：
-
-1. **省 token 优先**：先用本地已有 Skill、代码索引、`rg`、局部文件读取；不要一次性加载所有规则。
-2. **质量优先**：功能完成前必须有 fresh verification evidence，不能凭感觉说完成。
-3. **不写屎山代码**：优先小而完整的改动、已有项目模式、测试、review、de-sloppify，不用巨大抽象掩盖不确定性。
-4. **简单循环优先**：bug 默认走 localize → repair → validate，只有任务真的复杂时才升级到多 agent 或长循环。
-
-安装命令：
+`find_skill_candidates.py` is the live discovery layer:
 
 ```bash
-python scripts/install-universal.py --host codex --mode preserve
+python scripts/find_skill_candidates.py --capability security --include-cli --markdown
 ```
 
-如果你想同时安装到 Hermes/OpenClaw/Claude：
+It can use the local registry, GitHub high-star search, `npx skills find`,
+`npx clawhub search`, or a standalone `findskill` executable when available.
+It never installs anything.
 
-```bash
-python scripts/install-universal.py --host all --mode preserve
+When installed globally, the same tools are copied to:
+
+```text
+~/<host>/vibe-coding/scripts/
+~/<host>/vibe-coding/config/
 ```
 
----
+For Codex, that means `~/.codex/vibe-coding/scripts`.
 
-## 156 项 Skill 分类
+## Main Entry Points
 
-不用记名字，知道有什么能力就行；精确数量以 `python scripts/validate_setup.py` 输出为准。
+| Skill | Use |
+| --- | --- |
+| `codex-vibe-coding` | Codex host adapter and tool mapping |
+| `vibe-coding` | Main build/design/debug/review orchestrator |
+| `continuous-agent-loop` | Controlled iterative loops with stop conditions |
+| `autonomous-agent-harness` | Portable harness design across hosts |
+| `vibe-run-review` | Runtime scoring and external skill gap workflow |
 
-**需求与规划（11 项）**
-- 深度追问需求、建立项目术语表、拆解任务计划、生成产品需求文档、多步骤工程蓝图
+## Runtime Flow
 
-**设计（9 项）**
-- UI 视觉设计、动效设计、设计系统、原型制作、界面打磨、现场视觉审计
+1. Select the host adapter.
+2. Read only the project files and skills needed for the current phase.
+3. For bugs, start with localize -> repair -> validate.
+4. For feature work, choose the smallest loop that can produce evidence.
+5. Run scoped tests, lint/type/build/browser checks when available.
+6. Run `vibe-run-review` or `scripts/score_vibe_run.py` before completion.
+7. If a required capability is missing, search GitHub first, present candidates
+   and reasons to the user, then install only after approval.
 
-**架构与接口设计（6 项）**
-- API/模块接口设计（Design It Twice）、DDD 术语表提取、架构设计、重构规划
+## External Skill Intake
 
-**编码与质量（12 项）**
-- 编码规范、TDD 测试驱动、错误处理模式、双轴代码审查、AI slop 检测
+Useful external skill repositories are tracked in
+[`docs/EXTERNAL_SKILL_CANDIDATES.md`](docs/EXTERNAL_SKILL_CANDIDATES.md) and
+`config/skill-candidates.json`.
 
-**测试（6 项）**
-- 端到端测试、浏览器自动化测试、回归测试、测试执行、交互式 QA 会话
+The runtime policy is:
 
-**调试与诊断（5 项）**
-- 系统调试、专业调试工具、系统性根因调查、跳出细节看全局
+1. prefer an existing local skill when it covers the job
+2. if a gap remains, search GitHub before writing a new skill
+3. compare candidate license, maintenance, host fit, and overlap
+4. ask the user before importing or installing external skill code
+5. validate again after import
 
-**代码审查（9 项）**
-- 多角色审查、精简审查、质量审计、UI 审查、GSD 审查流程
+## Research Basis
 
-**安全（3 项）**
-- 安全审计、漏洞扫描、OWASP + STRIDE 首席安全官审计
+The iteration is grounded in:
 
-**文档（3 项）**
-- Diataxis 文档生成（教程/指南/参考/解释）、代码漫游、文档更新
+- Anthropic skill guidance: concise skills, progressive disclosure, realistic
+  validation, deterministic scripts
+- Claude Code guidance: hooks for non-negotiable automation and concise project
+  memory
+- Agentless: localization, repair, and patch validation as a simple default loop
+- SWE-agent: agent-computer interface design matters for coding performance
+- OpenHands-style harnesses: controlled state, sandbox awareness, evaluation,
+  and recovery for long-running work
 
-**发布与运维（4 项）**
-- 部署模式、发布监控、生产环境审计、发布收尾
-
-**AI / Agent 工程（8 项）**
-- AI 优先工程方法、持续自动循环、Agent 评估、并行 Agent 调度
-
-**项目管理（67 项 GSD）**
-- 项目初始化、阶段规划、执行、调试、代码审查、发布等完整管理流程
-
-**Git 安全（3 项）**
-- 防止危险 Git 操作、自动配置提交前检查、Git 工作树隔离
-
-**自动化钩子（13 个）**
-- 监控上下文使用、阶段边界检查、提示词安全、注入扫描、提交验证等
-
----
-
-## 可选增强（按需安装）
-
-### 120+ 专业插件（awesome-claude-code-toolkit）
-
-安装后 AI 会在对应阶段自动调用：
-- **画架构图** —— 复杂系统出架构图和接口设计
-- **数据库设计** —— 自动生成表结构和关系图
-- **前端开发增强** —— 组件开发最佳实践
-- **代码审查增强** —— 分级审查（致命/严重/警告/建议）
-- **死代码清理** —— 自动找出用不到的代码
-- **无障碍检查** —— WCAG 合规扫描
-- **打包分析** —— 检测体积回归
-- **部署自动化** —— 生成 Docker、CI/CD 配置
-- **文档生成** —— 自动生成 API 文档
-
-安装命令：
-```bash
-claude /plugin marketplace add rohitg00/awesome-claude-code-toolkit
-```
-
-### 代码语义索引（CodeGraph）
-
-安装后 AI 能"看懂"你的代码库结构：
-- 改代码前自动查影响范围
-- 查一个函数被哪些地方调用
-- 追踪调用链路
-
-安装命令：
-```bash
-npm install -g @codegraph/mcp-server
-codegraph init -i  # 在项目根目录执行一次
-```
-
-### 跨会话记忆（Claude Mem）
-
-安装后 AI 会记住之前的决策和模式，下次对话自动带入上下文：
-```bash
-claude /plugin marketplace add thedotmack/claude-mem
-```
-
-### 文言文模式（Caveman）
-
-内置。默认开启精简文言文回复，减少 token 消耗。说 `"normal mode"` 关闭，`"caveman mode"` 开启。
-
----
-
-## 使用示例
-
-**快速原型：**
-```
-你：做个待办列表页面
-AI：（判断 ≤ 15 分钟）直接快速完成
-```
-
-**全栈功能：**
-```
-你：做个用户管理后台，含列表、搜索、分页、导出
-AI：
-  1. 追问：用户是谁？权限怎么分？导出什么格式？
-  2. 出 8 步计划
-  3. 设计界面，评分 8.2/10
-  4. 开发，每模块配测试
-  5. 浏览器验证通过
-  6. 多角色审查通过（CEO/架构/安全/设计）
-  7. 发布并监控
-  8. 总结经验
-```
-
-**设计专项：**
-```
-你：让这个仪表盘好看点
-AI：
-  1. 定基调（专业/活泼/极简？）
-  2. 选字体、配色、布局
-  3. 加动效
-  4. 6 维度评分，打磨到 ≥ 7.5
-```
-
-**安全审计：**
-```
-你：检查一下这个项目的安全性
-AI：
-  1. 运行 OWASP Top 10 扫描
-  2. STRIDE 威胁建模
-  3. 检查依赖漏洞
-  4. 扫描硬编码密钥
-  5. 输出安全报告和修复建议
-```
-
----
-
-## AI Native 和传统 AI 辅助有什么区别
-
-| | 传统 AI 辅助 | AI Native（本配置） |
-|---|---|---|
-| **你怎么提需求** | 你说一句，AI 直接写 | 你说一句，AI 先追问确认，再动手 |
-| **有没有计划** | 即兴发挥，写到哪算哪 | 先出蓝图，你点头再执行 |
-| **怎么检查质量** | 你用眼睛看，发现问题再改 | 自动跑测试、查格式、审代码，不通过不让走 |
-| **出错了怎么办** | 你发现了告诉 AI | AI 自己发现，自己修 |
-| **审查谁做** | 你自己看 | AI 从 CEO、架构师、测试、安全、设计多个角度帮你审 |
-| **发布安全吗** | 直接推上去 | 发布后自动监控 5 分钟，有问题立刻报 |
-| **知识沉淀** | 每次从零开始 | 跨会话记忆，经验自动积累 |
-
-简单说：**传统方式像实习生，你盯着才干得好；AI Native 像资深工程师搭档，自己能推进，关键决策找你确认。**
-
----
-
-## 目录说明
-
-```
-.
-├── CLAUDE.md          # 灵魂文档——AI 的行为准则和工作流
-├── hooks.json         # 质量关卡配置
-├── README.md          # 本文件
-├── AGENT_INSTALL.md   # 给 AI 看的安装指南
-├── scripts/
-│   ├── install-universal.py  # Claude/Codex/Hermes/OpenClaw 通用安装器
-│   ├── validate_setup.py     # Skill 包验证器
-│   ├── install.sh            # macOS/Linux 包装脚本
-│   └── install.ps1           # Windows 包装脚本
-├── skills/            # 156 项 Skill 源码（以 validate_setup.py 为准）
-├── hooks/             # 13 个自动化钩子
-└── docs/              # 调研、对比与补充文档
-```
-
----
-
-## 总结
-
-这套配置解决的核心问题：
-1. **理解偏差** → 深度对齐 + 共享语言
-2. **设计随意** → 评分卡 + 设计规范 + 视觉审计
-3. **代码质量不稳** → 多层自动检查
-4. **改代码风险** → 影响分析
-5. **审查不全面** → 六角色视角（CEO/架构/测试/安全/设计/DevEx）
-6. **发布风险** → 自动化监控
-7. **知识流失** → 跨会话记忆 + 经验沉淀
-
-仓库地址：https://github.com/digibeing1001/claude-vibe-coding-setup
+See [`docs/RESEARCH.md`](docs/RESEARCH.md) and
+[`docs/COMPARISON.md`](docs/COMPARISON.md).
