@@ -1,5 +1,7 @@
 # Portable Vibe Coding Setup
 
+[中文](README.zh-CN.md) | English
+
 This repository packages a portable coding-agent workflow for Claude Code,
 Codex, Hermes, OpenClaw, and similar hosts.
 
