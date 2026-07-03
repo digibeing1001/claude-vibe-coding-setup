@@ -1,14 +1,38 @@
 ---
 name: continuous-agent-loop
-description: Production patterns for continuous autonomous coding-agent loops with explicit scope, context and cost budgets, verification gates, failure recovery, CI/PR controls, and stop conditions. Use when running iterative Vibe Coding, long-horizon implementation, autonomous repair, multi-agent coding, or any loop that must avoid churn.
+description: Legacy L1 entry for continuous autonomous coding-agent loops. Now subsumed by the loop-engineering skill which adds the three-layer architecture, deterministic controller, state spine, budget, Maker/Checker, and safety guardrails. Use loop-engineering for new work; this skill remains for backward compatibility and as a quick reference for loop patterns.
 origin: ECC
 ---
 
-# Continuous Agent Loop
+# Continuous Agent Loop (L1 Entry)
+
+This skill is the L1 (Agentic Coding Loop) entry point. For new work, prefer
+the `loop-engineering` skill which subsumes this one and adds the full
+three-layer architecture, deterministic controller, state spine, budget
+management, Maker/Checker separation, and safety guardrails.
 
 Use this skill to run Vibe Coding as a controlled engineering loop, not an
 unbounded prompt loop. The default goal is **minimum useful context plus maximum
 fresh verification evidence**.
+
+## Loop Engineering Upgrade
+
+This skill's loop patterns are now part of the Loop Engineering pattern
+catalog at `loops/patterns/`. The key upgrades when you load
+`loop-engineering` instead:
+
+| This skill | Loop Engineering upgrade |
+| --- | --- |
+| Loop patterns described as text | Patterns with full contracts (budget, stop conditions, Maker/Checker, STATE.md) |
+| State file template | STATE.md spine with read/write/prune + versioned handoff packages |
+| Budget table | Budget + kill switch + watchlist-empty early exit + cost estimation |
+| Quality gates | Maker/Checker physical separation + 6-stage verification |
+| Failure modes list | 15 failure modes cataloged by S1/S2/S3 severity |
+| Recovery protocol | Checkpoint + recovery with context-delta loading |
+| No readiness levels | L0/L1/L2/L3 progression with 18-dimension audit |
+
+For any loop >1 iteration, load `loop-engineering` and route through
+`loop-controller`.
 
 ## Non-Negotiables
 

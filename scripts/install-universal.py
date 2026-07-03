@@ -183,6 +183,8 @@ def install_host(
             "validate_setup.py",
             "score_vibe_run.py",
             "find_skill_candidates.py",
+            "loop_state.py",
+            "loop_audit.py",
         ]:
             files.append(("tool", source / "scripts" / name, tools_dir / name))
         files.append(

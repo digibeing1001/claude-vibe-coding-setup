@@ -1,12 +1,15 @@
 ---
 name: vibe-coding
-description: Unified portable Vibe Coding orchestrator. Use for build, design, prototype, implementation, debugging, review, and shipping requests across Codex, Claude Code, Hermes, OpenClaw, and similar hosts.
+description: Unified portable Vibe Coding orchestrator. Use for build, design, prototype, implementation, debugging, review, and shipping requests across Codex, Claude Code, Hermes, OpenClaw, and similar hosts. Routes all iterative work through Loop Engineering.
 ---
 
 # Vibe Coding Orchestrator
 
 This skill routes a coding request through the smallest workflow that can
-produce evidence.
+produce evidence. All iterative work runs as Loop Engineering — the
+three-layer nested feedback architecture governs how work flows from AI
+coding loops (L1) through developer feedback (L2) to external user feedback
+(L3).
 
 ## Phase 0: Vibe Check
 
@@ -15,9 +18,11 @@ Before implementation, determine:
 1. What is being built or fixed?
 2. Is this a bug, feature, UI task, refactor, release, or research task?
 3. Is the target a new project or an existing codebase?
-4. Which capabilities are required: testing, review, security, browser QA,
+4. Is this a single-pass task or an iterative loop? If iterative, which loop
+   pattern fits?
+5. Which capabilities are required: testing, review, security, browser QA,
    accessibility, deployment, design, git safety, or agent harness?
-5. Which local skills cover those capabilities?
+6. Which local skills cover those capabilities?
 
 If a required capability is missing, trigger the capability sensor:
 
@@ -30,18 +35,45 @@ If the repository scripts are unavailable, use the installed host copy such as
 
 Present the best candidates and wait for user approval before import.
 
+## Loop Engineering Entry
+
+For any task that needs more than one pass (bug fix requiring iteration,
+feature work, refactor, scheduled task, autonomous loop), load the
+`loop-engineering` skill and route through the loop controller:
+
+| Situation | Loop Pattern | Default Readiness |
+| --- | --- | --- |
+| Tiny edit | fast path: edit -> scoped verification -> review | L1 |
+| Bug/regression | localize-repair-validate | L1 |
+| Focused feature | sequential-quality-loop | L1 |
+| UI work | design pass -> implementation -> browser/a11y verification | L1 |
+| Broad spec | rfc-dag-loop | L2 |
+| Multiple creative directions | parallel-generation-loop | L2 |
+| Release/PR | continuous-pr-loop | L2 |
+| Daily scan & report | daily-triage | L1 |
+| CI failure auto-fix | ci-sweeper | L2 |
+| Issue classification | issue-triage | L1 |
+| Post-merge cleanup | post-merge-cleanup | L1 |
+
+For any loop >1 iteration, the `loop-controller` skill enforces the
+four-node cycle (Context -> Decide -> Act -> Evaluate) and the 8 state
+transitions. The `loop-state` skill maintains STATE.md. The `loop-budget`
+skill enforces budget and kill switch. The `maker-checker` skill enforces
+Maker/Checker physical separation. The `loop-constraints` skill enforces
+safety guardrails at every Context node.
+
 ## Workflow Selection
 
-| Situation | Loop |
+For single-pass tasks (tiny edits, quick lookups), skip the loop
+controller and use the fast path:
+
+| Situation | Workflow |
 | --- | --- |
 | Tiny edit | fast path: edit -> scoped verification -> review |
-| Bug/regression | localize -> repair -> validate |
-| Focused feature | sequential quality loop |
-| UI work | design pass -> implementation -> browser/a11y verification |
-| Broad spec | dependency graph of small work units |
-| Release/PR | verification -> review -> CI/publish evidence |
+| Quick lookup | read -> answer |
 
 Escalate to multi-agent or long-running loops only when the task needs it.
+Any loop >1 iteration must run through the controller.
 
 ## Phase Routing
 

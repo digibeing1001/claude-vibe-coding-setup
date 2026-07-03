@@ -1,6 +1,6 @@
 {
-  "_comment": "Claude Code 自动化质量关卡 Hooks. 复制到项目根目录 .claude/hooks.json 以启用项目级自动化.",
-  "version": "1.0",
+  "_comment": "VibeCoding Setup 自动化质量关卡与 Loop 护栏. 复制到项目根目录 .claude/hooks.json 以启用项目级自动化.",
+  "version": "2.0",
   "hooks": {
     "pre-commit": {
       "description": "每次代码编辑前自动运行",
@@ -39,12 +39,63 @@
       ],
       "on_failure": "warn"
     },
+    "pre-loop": {
+      "description": "进入 Loop Engineering 前的护栏. 任何一个失败都阻断 loop 启动",
+      "skills": [
+        "loop-constraints"
+      ],
+      "commands": [
+        {
+          "name": "Read Loop State",
+          "cmd": "python scripts/loop_state.py read",
+          "condition": "always",
+          "purpose": "读取 STATE.md. loop-constraints skill 解读后检查: (1) 计划写入路径是否命中 denylist (2) Kill Switch 是否被拉起 (3) 预算剩余是否低于阈值. 任一命中则转 wait_human 或 budget_exhausted, 不允许 AI 自行放行"
+        },
+        {
+          "name": "Loop Readiness Audit",
+          "cmd": "python scripts/loop_audit.py --pattern $LOOP_PATTERN --json --suggest",
+          "condition": "always",
+          "purpose": "运行 18 维就绪度评分. 低于目标 loop 级别阈值 (L1=38, L2=58, L3=78) 则降级运行或转 wait_human"
+        }
+      ],
+      "on_failure": "block"
+    },
+    "post-loop": {
+      "description": "Loop 退出后的强制收尾. 写状态、追加历史、强制 Post-Run Critique",
+      "skills": [
+        "loop-state",
+        "maker-checker",
+        "loop-engineering"
+      ],
+      "commands": [
+        {
+          "name": "Write Loop State",
+          "cmd": "python scripts/loop_state.py write --pattern $LOOP_PATTERN --outcome $LAST_OUTCOME",
+          "condition": "always",
+          "purpose": "把退出状态 (complete / fail / cancel / budget_exhausted) 写回 STATE.md 的 Last Outcome 段"
+        },
+        {
+          "name": "Append Loop Run Log",
+          "cmd": "python scripts/loop_state.py append-log --pattern $LOOP_PATTERN --outcome $LAST_OUTCOME --duration $LOOP_DURATION --tokens $LOOP_TOKENS",
+          "condition": "always",
+          "purpose": "把本次 run 的元数据追加到 loop-run-log.md, 用于后续成本趋势分析和失败模式复盘"
+        },
+        {
+          "name": "Post-Run Critique Trigger",
+          "cmd": "python scripts/loop_state.py write --pattern $LOOP_PATTERN --critique-required",
+          "condition": "always",
+          "purpose": "在 STATE.md 中标记 Critique Required=true. loop-engineering skill 在下一轮 Context 节点会读这个标记, 强制完成 Post-Run Critique (假设偏差 / 状态漂移 / 失败模式命中 / 系统迭代提案) 才能继续"
+        }
+      ],
+      "on_failure": "block"
+    },
     "pre-ship": {
       "description": "发布/部署前",
       "skills": [
         "security-review",
         "qa",
-        "code-review"
+        "code-review",
+        "maker-checker"
       ],
       "commands": [
         {
@@ -56,6 +107,12 @@
           "name": "Build Verification",
           "cmd": "npm run build",
           "condition": "file_exists:package.json"
+        },
+        {
+          "name": "Maker-Checker Verification",
+          "cmd": "python scripts/loop_state.py read",
+          "condition": "always",
+          "purpose": "读取 STATE.md, maker-checker skill 确认 6 阶段验证 (Build/TypeCheck/Lint/Test/Security/Diff Review) 已全部通过. Checker 未签字禁止发布"
         }
       ],
       "on_failure": "block"
@@ -64,13 +121,20 @@
       "description": "合并代码前",
       "skills": [
         "simplify",
-        "devex-review"
+        "devex-review",
+        "loop-constraints"
       ],
       "commands": [
         {
           "name": "Final Test Run",
           "cmd": "npm test",
           "condition": "file_exists:package.json"
+        },
+        {
+          "name": "Auto-Merge Guard",
+          "cmd": "python scripts/loop_state.py read",
+          "condition": "always",
+          "purpose": "读取 STATE.md, loop-constraints skill 确认本次 PR 在 auto-merge allowlist 中. 默认禁止 auto-merge, 只有 allowlist 内的低风险 PR 才能跳过人工门"
         }
       ],
       "on_failure": "block"
@@ -82,6 +146,12 @@
           "name": "Git Status Check",
           "cmd": "git status --short",
           "condition": "git_repo"
+        },
+        {
+          "name": "Checkpoint Loop State",
+          "cmd": "python scripts/loop_state.py checkpoint --run-id $RUN_ID",
+          "condition": "always",
+          "purpose": "在 git commit 后把 STATE.md 落盘为检查点 current.json, 便于后续 loop run 失败时回滚恢复"
         }
       ]
     }
@@ -98,7 +168,8 @@
     },
     "code_review": {
       "trigger": "per_feature",
-      "dimensions": ["correctness", "simplicity", "security", "performance", "maintainability"]
+      "dimensions": ["correctness", "simplicity", "security", "performance", "maintainability"],
+      "enforced_by": "maker-checker"
     },
     "security": {
       "trigger": "pre_release",
@@ -107,6 +178,25 @@
     "qa": {
       "trigger": "pre_release",
       "tools": ["playwright", "lighthouse"]
+    },
+    "loop_readiness": {
+      "trigger": "pre_loop",
+      "dimensions": ["state_management", "controller", "maker_checker", "budget", "safety", "recovery", "evidence", "critique"],
+      "thresholds": {
+        "L1": 38,
+        "L2": 58,
+        "L3": 78
+      }
+    },
+    "loop_budget": {
+      "trigger": "per_loop_run",
+      "dimensions": ["max_iterations", "max_tokens", "max_cost_usd", "max_wall_clock", "max_retries_per_cause", "max_stagnant_cycles", "max_parallel_loops"],
+      "on_exhausted": "budget_exhausted"
+    },
+    "loop_safety": {
+      "trigger": "pre_loop",
+      "checks": ["path_denylist", "auto_merge_allowlist", "mcp_least_privilege", "kill_switch"],
+      "on_violation": "wait_human"
     }
   }
 }
